@@ -71,7 +71,7 @@ From CUHK and Tencent AI Lab.
 
   <tr>
     <td colspan="2">"zoom-in, a landscape, springtime"</td>
-    <td colspan="2">"A blonde woman rides on top of a moving washing machine into the sunset."</td>
+    <td colspan="2">"A blonde woman rides on top of a moving <br>washing machine into the sunset."</td>
   </tr>
   <tr>
   <td>
@@ -161,37 +161,37 @@ From CUHK and Tencent AI Lab.
     </tr>
   <tr>
   <td>
-    <img src=assets/application/gkxX0kb8mE8_input_start.png width="300">
+    <img src=assets/application/gkxX0kb8mE8_input_start.png width="250">
   </td>
   <td>
-    <img src=assets/application/gkxX0kb8mE8_input_end.png width="300">
+    <img src=assets/application/gkxX0kb8mE8_input_end.png width="250">
   </td>
   <td>
-    <img src=assets/application/gkxX0kb8mE8.gif width="300">
-  </td>
-  </tr>
-
-  <tr>
-  <td>
-    <img src=assets/application/YwHJYWvv_dM_input_start.png width="300">
-  </td>
-  <td>
-    <img src=assets/application/YwHJYWvv_dM_input_end.png width="300">
-  </td>
-  <td>
-    <img src=assets/application/YwHJYWvv_dM.gif width="300">
+    <img src=assets/application/gkxX0kb8mE8.gif width="250">
   </td>
   </tr>
 
   <tr>
   <td>
-    <img src=assets/application/ypDLB52Ykk4_input_start.png width="300">
+    <img src=assets/application/YwHJYWvv_dM_input_start.png width="250">
   </td>
   <td>
-    <img src=assets/application/ypDLB52Ykk4_input_end.png width="300">
+    <img src=assets/application/YwHJYWvv_dM_input_end.png width="250">
   </td>
   <td>
-    <img src=assets/application/ypDLB52Ykk4.gif width="300">
+    <img src=assets/application/YwHJYWvv_dM.gif width="250">
+  </td>
+  </tr>
+
+  <tr>
+  <td>
+    <img src=assets/application/ypDLB52Ykk4_input_start.png width="250">
+  </td>
+  <td>
+    <img src=assets/application/ypDLB52Ykk4_input_end.png width="250">
+  </td>
+  <td>
+    <img src=assets/application/ypDLB52Ykk4.gif width="250">
   </td>
   </tr>
 </table >
