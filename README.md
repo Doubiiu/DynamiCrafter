@@ -22,12 +22,6 @@ From CUHK and Tencent AI Lab.
 ### 1. Showcases
 
 <table class="center">
-    <!-- <tr style="font-weight: bolder;text-align:center;">
-        <td>Input</td>
-        <td>Output</td>
-        <td>Input</td>
-        <td>Output</td>
-    </tr> -->
   <tr>
     <td colspan="2">"bear playing guitar happily, snowing"</td>
     <td colspan="2">"boy walking on the street"</td>
@@ -199,42 +193,39 @@ From CUHK and Tencent AI Lab.
 
 
 ## 📝 Changelog
+- __[2023.11.29]__: 🔥🔥 Release the main model at a resolution of 256x256.
 - __[2023.11.27]__: 🔥🔥 Launch the project page and update the arXiv preprint.
 <br>
 
 
-## 🧰 Models (will be released within this week)
+## 🧰 Models
 
-<!-- |Model|Resolution|Checkpoint|Description
-|:---------|:---------|:--------|:--------|
-|DynamiCrafter256|256x256|[Hugging Face]()|Support 16 frames -->
+|Model|Resolution|Checkpoint|
+|:---------|:---------|:--------|
+|DynamiCrafter256|256x256|[Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter/blob/main/model.ckpt)|
 
-<!-- (Reduce the number of frames when you have smaller GPUs, e.g. 256x256 resolutions with 64 frames.) -->
+It takes approximately 10 seconds and requires a peak GPU memory of 20 GB to animate an image using a single NVIDIA A100 (40G) GPU.
 
-<!-- ## ⚙️ Setup
+## ⚙️ Setup
 
 ### Install Environment via Anaconda (Recommended)
 ```bash
-conda create -n freenoise python=3.8.5
-conda activate freenoise
+conda create -n dynamicrafter python=3.8.5
+conda activate dynamicrafter
 pip install -r requirements.txt
-``` -->
+```
 
 
-<!-- ## 💫 Inference (soon) -->
-
-
-<!-- 1) Download pretrained T2V models via [Hugging Face](https://huggingface.co/VideoCrafter/Text2Video-512-v1/blob/main/model.ckpt), and put the `model.ckpt` in `checkpoints/base_512_v1/model.ckpt`.
+## 💫 Inference 
+### 1. Command line
+1) Download pretrained models via [Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter/blob/main/model.ckpt), and put the `model.ckpt` in `checkpoints/dynamicrafter_256_v1/model.ckpt`.
 2) Input the following commands in terminal.
 ```bash
-  sh scripts/run_text2video_freenoise_512.sh
-``` -->
+  sh scripts/run.sh
+```
 
-<!-- 1) Download pretrained T2V models via [Hugging Face](https://huggingface.co/VideoCrafter/Text2Video-1024-v1.0/blob/main/model.ckpt), and put the `model.ckpt` in `checkpoints/base_1024_v1/model.ckpt`.
-2) Input the following commands in terminal.
-```bash
-  sh scripts/run_text2video_freenoise_1024.sh
-``` -->
+### 2. Local Gradio demo (coming soon)
+
 
 
 ## 👨‍👩‍👧‍👦 Crafter Family
