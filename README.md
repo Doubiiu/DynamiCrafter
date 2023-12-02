@@ -193,6 +193,7 @@ From CUHK and Tencent AI Lab.
 
 
 ## 📝 Changelog
+- __[2023.12.02]__: 🔥🔥 Launch the local Gradio demo.
 - __[2023.11.29]__: 🔥🔥 Release the main model at a resolution of 256x256.
 - __[2023.11.27]__: 🔥🔥 Launch the project page and update the arXiv preprint.
 <br>
@@ -219,13 +220,22 @@ pip install -r requirements.txt
 ## 💫 Inference 
 ### 1. Command line
 1) Download pretrained models via [Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter/blob/main/model.ckpt), and put the `model.ckpt` in `checkpoints/dynamicrafter_256_v1/model.ckpt`.
-2) Input the following commands in terminal.
+2) Run the commands based on your devices and needs in terminal.
 ```bash
+  # Run on a single GPU:
   sh scripts/run.sh
+  # Run on multiple GPUs for parallel inference:
+  sh scripts/run_mp.sh
 ```
 
-### 2. Local Gradio demo (coming soon)
 
+
+### 2. Local Gradio demo
+1. Download the pretrained models and put them in the corresponding directory according to the previous guidelines.
+2. Input the following commands in terminal.
+```bash
+  python gradio_app.py
+```
 
 
 ## 👨‍👩‍👧‍👦 Crafter Family
@@ -238,6 +248,8 @@ pip install -r requirements.txt
 [LongerCrafter](https://github.com/arthur-qiu/LongerCrafter): Tuning-free method for longer high-quality video generation.  
 
 [MakeYourVideo, might be a Crafter:)](https://doubiiu.github.io/projects/Make-Your-Video/): Video generation/editing with textual and structural guidance.
+
+[StyleCrafter](https://gongyeliu.github.io/StyleCrafter.github.io/): Stylized-image-guided text-to-image and text-to-video generation.
 ## 😉 Citation
 ```bib
 @article{xing2023dynamicrafter,
