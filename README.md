@@ -264,6 +264,8 @@ pip install -r requirements.txt
 }
 ```
 
+## 🙏 Acknowledgements
+We would like to thank [AK(@_akhaliq)](https://twitter.com/_akhaliq?lang=en) for the help of setting up online demo.
 
 ## 📢 Disclaimer
 We develop this repository for RESEARCH purposes, so it can only be used for personal/research/non-commercial purposes.

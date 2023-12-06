@@ -11,7 +11,7 @@ i2v_examples = [
     ['prompts/dance1.jpeg', 'two people dancing', 50, 7.5, 1.0, 3, 116],
     ['prompts/fire_and_beach.jpg', 'a campfire on the beach and the ocean waves in the background', 50, 7.5, 1.0, 3, 111],
     ['prompts/girl3.jpeg', 'girl talking and blinking', 50, 7.5, 1.0, 3, 111],
-    ['prompts/guitar0.jpeg', 'bear playing guitar happily, snowing', 50, 7.5, 1.0, 3, 111],
+    ['prompts/guitar0.jpeg', 'bear playing guitar happily, snowing', 50, 7.5, 1.0, 3, 122],
 ]
 css = """#input_img {max-width: 256px !important} #output_vid {max-width: 256px; max-height: 256px}"""
 
