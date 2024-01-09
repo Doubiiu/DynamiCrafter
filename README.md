@@ -25,6 +25,7 @@ From CUHK and Tencent AI Lab.
  
 ## 🔆 Introduction
 
+🚀🚀🚀 We will release a higher-resolution & watermark-free version of DynamiCrafter at the end of Jan. Stay tuned!<br>
 🤗 DynamiCrafter can animate open-domain still images based on text prompt by leveraging the pre-trained video diffusion priors. Please check our project page and paper for more information. <br>
 😀 We will continue to improve the model's performance, which includes offering higher resolution, eliminating watermarks, and enhancing stability.
 ### 1. Showcases
