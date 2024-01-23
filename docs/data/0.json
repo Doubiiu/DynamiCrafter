@@ -1,0 +1,543 @@
+{
+    "0": {
+        "file_id": 0,
+        "content": "/README.md",
+        "type": "filepath"
+    },
+    "1": {
+        "file_id": 0,
+        "content": "DynamiCrafter is an open-source tool for generating storytelling videos from tables, using video diffusion priors and models. It utilizes inputs from the \"assets/application\" folder at 250px width. The code provides a BibTeX citation and acknowledges contributors, specifying research purposes.",
+        "type": "summary"
+    },
+    "2": {
+        "file_id": 0,
+        "content": "## ___***DynamiCrafter: Animating Open-domain Images with Video Diffusion Priors***___\n<!-- ![](./assets/logo_long.png#gh-light-mode-only){: width=\"50%\"} -->\n<!-- ![](./assets/logo_long_dark.png#gh-dark-mode-only=100x20) -->\n<div align=\"center\">\n<img src='assets/logo_long.png' style=\"height:100px\"></img>\n <a href='https://arxiv.org/abs/2310.12190'><img src='https://img.shields.io/badge/arXiv-2310.12190-b31b1b.svg'></a> &nbsp;\n <a href='https://doubiiu.github.io/projects/DynamiCrafter/'><img src='https://img.shields.io/badge/Project-Page-Green'></a> &nbsp;\n<a href='https://huggingface.co/spaces/Doubiiu/DynamiCrafter'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Demo-blue'></a> &nbsp;\n<a href='https://www.youtube.com/watch?v=PtW7hjCawbo'><img src='https://img.shields.io/badge/Youtube-Video-b31b1b.svg'></a><br>\n[![Open in OpenXLab](https://cdn-static.openxlab.org.cn/app-center/openxlab_app.svg)](https://openxlab.org.cn/apps/detail/JinboXING/DynamiCrafter)&nbsp;&nbsp;\n<a href",
+        "type": "code",
+        "location": "/README.md:1-15"
+    },
+    "3": {
+        "file_id": 0,
+        "content": "DynamiCrafter is an open-domain image animation tool using video diffusion priors. It has a project page, Hugging Face demo, and a YouTube video available. The code can be opened in OpenXLab for further exploration.",
+        "type": "comment"
+    },
+    "4": {
+        "file_id": 0,
+        "content": "='https://replicate.com/camenduru/dynami-crafter'><img src='https://img.shields.io/badge/replicate-Demo & Cloud API-blue'></a>&nbsp;&nbsp;\n<a href='https://github.com/camenduru/DynamiCrafter-colab'><img src='https://img.shields.io/badge/Colab-Demo-Green'></a>\n_**[Jinbo Xing](https://doubiiu.github.io/), [Menghan Xia*](https://menghanxia.github.io), [Yong Zhang](https://yzhang2016.github.io), [Haoxin Chen](), [Wangbo Yu](), <br>[Hanyuan Liu](https://github.com/hyliu), [Xintao Wang](https://xinntao.github.io/), [Tien-Tsin Wong*](https://www.cse.cuhk.edu.hk/~ttwong/myself.html), [Ying Shan](https://scholar.google.com/citations?hl=en&user=4oXBp9UAAAAJ&view_op=list_works&sortby=pubdate)**_\n<br><br>\n(* corresponding authors)\nFrom CUHK and Tencent AI Lab.\n</div>\n## 🔆 Introduction\n🚀🚀🚀 We will release a higher-resolution & watermark-free version of DynamiCrafter at the end of Jan. Stay tuned!<br>\n🤗 DynamiCrafter can animate open-domain still images based on text prompt by leveraging the pre-trained video diffusion priors. Please check our project page and paper for more information. <br>",
+        "type": "code",
+        "location": "/README.md:15-29"
+    },
+    "5": {
+        "file_id": 0,
+        "content": "This code snippet provides information about the DynamiCrafter project, including its GitHub and Replicate links for demo and cloud API access. The authors of the project are mentioned along with their respective websites or profiles. The code also informs that a higher-resolution, watermark-free version will be released at the end of January.",
+        "type": "comment"
+    },
+    "6": {
+        "file_id": 0,
+        "content": "😀 We will continue to improve the model's performance, which includes offering higher resolution, eliminating watermarks, and enhancing stability.\n### 1. Showcases\n<table class=\"center\">\n  <tr>\n    <td colspan=\"2\">\"bear playing guitar happily, snowing\"</td>\n    <td colspan=\"2\">\"boy walking on the street\"</td>\n  </tr>\n  <tr>\n  <td>\n    <img src=assets/showcase/guitar0.jpeg_00.png width=\"170\">\n  </td>\n  <td>\n    <img src=assets/showcase/guitar0.gif width=\"170\">\n  </td>\n  <td>\n    <img src=assets/showcase/walk0.png_00.png width=\"170\">\n  </td>\n  <td>\n    <img src=assets/showcase/walk0.gif width=\"170\">\n  </td>\n  </tr>\n  <tr>\n    <td colspan=\"2\">\"two people dancing\"</td>\n    <td colspan=\"2\">\"girl talking and blinking\"</td>\n  </tr>\n  <tr>\n  <td>\n    <img src=assets/showcase/dance1.jpeg_00.png width=\"170\">\n  </td>\n  <td>\n    <img src=assets/showcase/dance1.gif width=\"170\">\n  </td>\n  <td>\n    <img src=assets/showcase/girl3.jpeg_00.png width=\"170\">\n  </td>\n  <td>\n    <img src=assets/showcase/girl3.gif width=\"170\">\n  </td>\n  </tr>\n  <tr>",
+        "type": "code",
+        "location": "/README.md:30-75"
+    },
+    "7": {
+        "file_id": 0,
+        "content": "This code is creating a table with showcases for the DynamiCrafter model. It includes four example images: \"bear playing guitar happily, snowing,\" \"boy walking on the street,\" \"two people dancing,\" and \"girl talking and blinking.\" Each image has both static (jpeg) and animated (gif) versions. The code is organized in rows and columns within the table, providing a visually appealing presentation of the model's performance capabilities.",
+        "type": "comment"
+    },
+    "8": {
+        "file_id": 0,
+        "content": "    <td colspan=\"2\">\"zoom-in, a landscape, springtime\"</td>\n    <td colspan=\"2\">\"A blonde woman rides on top of a moving <br>washing machine into the sunset.\"</td>\n  </tr>\n  <tr>\n  <td>\n    <img src=assets/showcase/Upscaled_Aime_Tribolet_springtime_landscape_golden_hour_morning_pale_yel_e6946f8d-37c1-4ce8-bf62-6ba90d23bd93.mp4_00.png width=\"170\">\n  </td>\n  <td>\n    <img src=assets/showcase/Upscaled_Aime_Tribolet_springtime_landscape_golden_hour_morning_pale_yel_e6946f8d-37c1-4ce8-bf62-6ba90d23bd93.gif width=\"170\">\n  </td>\n  <td>\n    <img src=assets/showcase/Upscaled_Alex__State_Blonde_woman_riding_on_top_of_a_moving_washing_mach_c31acaa3-dd30-459f-a109-2d2eb4c00fe2.mp4_00.png width=\"170\">\n  </td>\n  <td>\n    <img src=assets/showcase/Upscaled_Alex__State_Blonde_woman_riding_on_top_of_a_moving_washing_mach_c31acaa3-dd30-459f-a109-2d2eb4c00fe2.gif width=\"170\">\n  </td>\n  </tr>\n  <tr>\n    <td colspan=\"2\">\"explode colorful smoke coming out\"</td>\n    <td colspan=\"2\">\"a bird on the tree branch\"</td>\n  </tr>\n  <tr>\n  <td>",
+        "type": "code",
+        "location": "/README.md:76-100"
+    },
+    "9": {
+        "file_id": 0,
+        "content": "Images are displayed with descriptive text, showcasing two scenarios: one featuring a springtime landscape and the other depicting a blonde woman riding on a moving washing machine. The code also describes additional scenes including an explosion of colorful smoke and a bird on a tree branch.",
+        "type": "comment"
+    },
+    "10": {
+        "file_id": 0,
+        "content": "    <img src=assets/showcase/explode0.jpeg_00.png width=\"170\">\n  </td>\n  <td>\n    <img src=assets/showcase/explode0.gif width=\"170\">\n  </td>\n  <td>\n    <img src=assets/showcase/bird000.jpeg width=\"170\">\n  </td>\n  <td>\n    <img src=assets/showcase/bird000.gif width=\"170\">\n  </td>\n  </tr>\n</table >\n### 2. Applications\n#### 2.1 Storytelling video generation (see project page for more details)\n<table class=\"center\">\n    <!-- <tr style=\"font-weight: bolder;text-align:center;\">\n        <td>Input</td>\n        <td>Output</td>\n        <td>Input</td>\n        <td>Output</td>\n    </tr> -->\n  <tr>\n    <td colspan=\"4\"><img src=assets/application/storytellingvideo.gif width=\"250\"></td>\n  </tr>\n</table >\n#### 2.2 Looping video generation\n<table class=\"center\">\n  <tr>\n  <td>\n    <img src=assets/application/60.gif width=\"300\">\n  </td>\n  <td>\n    <img src=assets/application/35.gif width=\"300\">\n  </td>\n  <td>\n    <img src=assets/application/36.gif width=\"300\">\n  </td>\n  </tr>\n  <tr>\n  <td>\n    <img src=assets/application/05.gif width=\"300\">\n  </td>",
+        "type": "code",
+        "location": "/README.md:101-147"
+    },
+    "11": {
+        "file_id": 0,
+        "content": "Images and animations shown for demonstration purposes. The code displays various images and GIFs in a table format for applications like storytelling video generation and looping video generation.",
+        "type": "comment"
+    },
+    "12": {
+        "file_id": 0,
+        "content": "  <td>\n    <img src=assets/application/25.gif width=\"300\">\n  </td>\n  <td>\n    <img src=assets/application/34.gif width=\"300\">\n  </td>\n  </tr>\n</table >\n#### 2.3 Generative frame interpolation\n<table class=\"center\">\n    <tr style=\"font-weight: bolder;text-align:center;\">\n        <td>Input starting frame</td>\n        <td>Input ending frame</td>\n        <td>Generated video</td>\n    </tr>\n  <tr>\n  <td>\n    <img src=assets/application/gkxX0kb8mE8_input_start.png width=\"250\">\n  </td>\n  <td>\n    <img src=assets/application/gkxX0kb8mE8_input_end.png width=\"250\">\n  </td>\n  <td>\n    <img src=assets/application/gkxX0kb8mE8.gif width=\"250\">\n  </td>\n  </tr>\n  <tr>\n  <td>\n    <img src=assets/application/YwHJYWvv_dM_input_start.png width=\"250\">\n  </td>\n  <td>\n    <img src=assets/application/YwHJYWvv_dM_input_end.png width=\"250\">\n  </td>\n  <td>\n    <img src=assets/application/YwHJYWvv_dM.gif width=\"250\">\n  </td>\n  </tr>\n  <tr>\n  <td>\n    <img src=assets/application/ypDLB52Ykk4_input_start.png width=\"250\">\n  </td>\n  <td>\n    <img src=assets/application/ypDLB52Ykk4_input_end.png width=\"250\">",
+        "type": "code",
+        "location": "/README.md:148-194"
+    },
+    "13": {
+        "file_id": 0,
+        "content": "This code displays a table with three columns: input starting frame, input ending frame, and generated video. It uses images from \"assets/application\" folder with width 250px for each column. The first two columns show input frames, while the third column shows the generated video.",
+        "type": "comment"
+    },
+    "14": {
+        "file_id": 0,
+        "content": "  </td>\n  <td>\n    <img src=assets/application/ypDLB52Ykk4.gif width=\"250\">\n  </td>\n  </tr>\n</table >\n## 📝 Changelog\n- __[2023.12.02]__: 🔥🔥 Launch the local Gradio demo.\n- __[2023.11.29]__: 🔥🔥 Release the main model at a resolution of 256x256.\n- __[2023.11.27]__: 🔥🔥 Launch the project page and update the arXiv preprint.\n<br>\n## 🧰 Models\n|Model|Resolution|Checkpoint|\n|:---------|:---------|:--------|\n|DynamiCrafter256|256x256|[Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter/blob/main/model.ckpt)|\nIt takes approximately 10 seconds and requires a peak GPU memory of 20 GB to animate an image using a single NVIDIA A100 (40G) GPU.\n## ⚙️ Setup\n### Install Environment via Anaconda (Recommended)\n```bash\nconda create -n dynamicrafter python=3.8.5\nconda activate dynamicrafter\npip install -r requirements.txt\n```\n## 💫 Inference \n### 1. Command line\n1) Download pretrained models via [Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter/blob/main/model.ckpt), and put the `model.ckpt` in `checkpoints/dynamicrafter_256_v1/model.ckpt`.",
+        "type": "code",
+        "location": "/README.md:195-231"
+    },
+    "15": {
+        "file_id": 0,
+        "content": "This code snippet represents a section of the README file in the DynamiCrafter project. It includes a table detailing the model's resolution and checkpoint location, information about the launch dates of the local Gradio demo, main model release, and project page updates, along with the arXiv preprint update. The code also provides instructions for setting up the environment using Anaconda, installing requirements, and guidance on how to use DynamiCrafter for inference via command line. The GPU memory and time required to animate an image are mentioned, along with a link to download pretrained models from Hugging Face.",
+        "type": "comment"
+    },
+    "16": {
+        "file_id": 0,
+        "content": "2) Run the commands based on your devices and needs in terminal.\n```bash\n  # Run on a single GPU:\n  sh scripts/run.sh\n  # Run on multiple GPUs for parallel inference:\n  sh scripts/run_mp.sh\n```\n### 2. Local Gradio demo\n1. Download the pretrained models and put them in the corresponding directory according to the previous guidelines.\n2. Input the following commands in terminal.\n```bash\n  python gradio_app.py\n```\n## 👨‍👩‍👧‍👦 Crafter Family\n[VideoCrafter1](https://github.com/AILab-CVC/VideoCrafter): Framework for high-quality video generation.\n[ScaleCrafter](https://github.com/YingqingHe/ScaleCrafter): Tuning-free method for high-resolution image/video generation.\n[TaleCrafter](https://github.com/AILab-CVC/TaleCrafter): An interactive story visualization tool that supports multiple characters.  \n[LongerCrafter](https://github.com/arthur-qiu/LongerCrafter): Tuning-free method for longer high-quality video generation.  \n[MakeYourVideo, might be a Crafter:)](https://doubiiu.github.io/projects/Make-Your-Video/): Video generation/editing with textual and structural guidance.",
+        "type": "code",
+        "location": "/README.md:232-259"
+    },
+    "17": {
+        "file_id": 0,
+        "content": "This code provides instructions for running a DynamiCrafter application on a single or multiple GPUs, as well as setting up a local Gradio demo. The steps include downloading pre-trained models, placing them in the correct directories, and inputting commands in the terminal to run the application. The code also mentions several related projects like VideoCrafter, ScaleCrafter, TaleCrafter, LongerCrafter, and MakeYourVideo.",
+        "type": "comment"
+    },
+    "18": {
+        "file_id": 0,
+        "content": "[StyleCrafter](https://gongyeliu.github.io/StyleCrafter.github.io/): Stylized-image-guided text-to-image and text-to-video generation.\n## 😉 Citation\n```bib\n@article{xing2023dynamicrafter,\n  title={DynamiCrafter: Animating Open-domain Images with Video Diffusion Priors},\n  author={Xing, Jinbo and Xia, Menghan and Zhang, Yong and Chen, Haoxin and Yu, Wangbo and Liu, Hanyuan and Wang, Xintao and Wong, Tien-Tsin and Shan, Ying},\n  journal={arXiv preprint arXiv:2310.12190},\n  year={2023}\n}\n```\n## 🙏 Acknowledgements\nWe would like to thank [AK(@_akhaliq)](https://twitter.com/_akhaliq?lang=en) for the help of setting up hugging face online demo, and [camenduru](https://twitter.com/camenduru) for providing the replicate & colab online demo.\n## 📢 Disclaimer\nWe develop this repository for RESEARCH purposes, so it can only be used for personal/research/non-commercial purposes.\n****",
+        "type": "code",
+        "location": "/README.md:261-277"
+    },
+    "19": {
+        "file_id": 0,
+        "content": "This code is for DynamiCrafter, a text-to-image and text-to-video generation tool. It provides an article citation in BibTeX format, acknowledges contributors, and states the repository is for research purposes only.",
+        "type": "comment"
+    },
+    "20": {
+        "file_id": 1,
+        "content": "/configs/inference_256_v1.0.yaml",
+        "type": "filepath"
+    },
+    "21": {
+        "file_id": 1,
+        "content": "This YAML file configures deep learning models for image generation and inpainting, specifying architecture, timesteps, attention mechanisms, and parameters.",
+        "type": "summary"
+    },
+    "22": {
+        "file_id": 1,
+        "content": "model:\n  target: lvdm.models.ddpm3d.LatentVisualDiffusion\n  params:\n    linear_start: 0.00085\n    linear_end: 0.012\n    num_timesteps_cond: 1\n    timesteps: 1000\n    first_stage_key: video\n    cond_stage_key: caption\n    cond_stage_trainable: False\n    conditioning_key: hybrid\n    image_size: [32, 32]\n    channels: 4\n    scale_by_std: False\n    scale_factor: 0.18215\n    use_ema: False\n    uncond_type: 'empty_seq'\n    unet_config:\n      target: lvdm.modules.networks.openaimodel3d.UNetModel\n      params:\n        in_channels: 8\n        out_channels: 4\n        model_channels: 320\n        attention_resolutions:\n        - 4\n        - 2\n        - 1\n        num_res_blocks: 2\n        channel_mult:\n        - 1\n        - 2\n        - 4\n        - 4\n        dropout: 0.1\n        num_head_channels: 64\n        transformer_depth: 1\n        context_dim: 1024\n        use_linear: true\n        use_checkpoint: True\n        temporal_conv: True\n        temporal_attention: True\n        temporal_selfatt_only: true\n        use_relative_position: false\n        use_causal_attention: False",
+        "type": "code",
+        "location": "/configs/inference_256_v1.0.yaml:1-44"
+    },
+    "23": {
+        "file_id": 1,
+        "content": "This YAML file configures a deep learning model with image generation capabilities, using a LatentVisualDiffusion target and an OpenAIModel3D UNet for conditioning. It has multiple timesteps, specific channel configurations, and various attention mechanisms enabled.",
+        "type": "comment"
+    },
+    "24": {
+        "file_id": 1,
+        "content": "        temporal_length: 16\n        addition_attention: true\n        image_cross_attention: true\n        image_cross_attention_scale_learnable: true\n        default_fs: 3\n        fs_condition: true\n    first_stage_config:\n      target: lvdm.models.autoencoder.AutoencoderKL\n      params:\n        embed_dim: 4\n        monitor: val/rec_loss\n        ddconfig:\n          double_z: True\n          z_channels: 4\n          resolution: 256\n          in_channels: 3\n          out_ch: 3\n          ch: 128\n          ch_mult:\n          - 1\n          - 2\n          - 4\n          - 4\n          num_res_blocks: 2\n          attn_resolutions: []\n          dropout: 0.0\n        lossconfig:\n          target: torch.nn.Identity\n    cond_stage_config:\n      target: lvdm.modules.encoders.condition.FrozenOpenCLIPEmbedder\n      params:\n        freeze: true\n        layer: \"penultimate\"\n    img_cond_stage_config:\n      target: lvdm.modules.encoders.condition.FrozenOpenCLIPImageEmbedderV2\n      params:\n        freeze: true\n    image_proj_stage_config:\n      target: lvdm.modules.encoders.resampler.Resampler",
+        "type": "code",
+        "location": "/configs/inference_256_v1.0.yaml:45-87"
+    },
+    "25": {
+        "file_id": 1,
+        "content": "This code configures an image inpainting model using the AutoencoderKL from lvdm library. It has multiple stages, including a first stage autoencoder, conditioning stages for CLIP embeddings, and an image projection stage. The configuration includes specific parameters like embedding dimension, monitor metric, loss configuration, and more.",
+        "type": "comment"
+    },
+    "26": {
+        "file_id": 1,
+        "content": "      params:\n        dim: 1024\n        depth: 4\n        dim_head: 64\n        heads: 12\n        num_queries: 16\n        embedding_dim: 1280\n        output_dim: 1024\n        ff_mult: 4\n        video_length: 16",
+        "type": "code",
+        "location": "/configs/inference_256_v1.0.yaml:88-97"
+    },
+    "27": {
+        "file_id": 1,
+        "content": "This code segment is part of a YAML configuration file for a neural network model. It defines the parameters for the network architecture, including dimensions, depth, and other specifications to be used in the inference process.",
+        "type": "comment"
+    },
+    "28": {
+        "file_id": 2,
+        "content": "/gradio_app.py",
+        "type": "filepath"
+    },
+    "29": {
+        "file_id": 2,
+        "content": "The code uses DynamiCrafter and Gradio to create video examples with input fields, sliders, and output videos. It creates a DynamicRafter interface, sets the result directory, queues up to 12 items, and launches it with one thread.",
+        "type": "summary"
+    },
+    "30": {
+        "file_id": 2,
+        "content": "import os\nimport sys\nimport gradio as gr\nfrom scripts.gradio.i2v_test import Image2Video\nsys.path.insert(1, os.path.join(sys.path[0], 'lvdm'))\ni2v_examples = [\n    ['prompts/art.png', 'man fishing in a boat at sunset', 50, 7.5, 1.0, 3, 234],\n    ['prompts/boy.png', 'boy walking on the street', 50, 7.5, 1.0, 3, 125],\n    ['prompts/dance1.jpeg', 'two people dancing', 50, 7.5, 1.0, 3, 116],\n    ['prompts/fire_and_beach.jpg', 'a campfire on the beach and the ocean waves in the background', 50, 7.5, 1.0, 3, 111],\n    ['prompts/girl3.jpeg', 'girl talking and blinking', 50, 7.5, 1.0, 3, 111],\n    ['prompts/guitar0.jpeg', 'bear playing guitar happily, snowing', 50, 7.5, 1.0, 3, 122],\n]\ncss = \"\"\"#input_img {max-width: 256px !important} #output_vid {max-width: 256px; max-height: 256px}\"\"\"\ndef dynamicrafter_demo(result_dir='./tmp/'):\n    image2video = Image2Video(result_dir)\n    with gr.Blocks(analytics_enabled=False, css=css) as dynamicrafter_iface:\n        gr.Markdown(\"<div align='center'> <h1> DynamiCrafter: Animating Open-domain Images with Video Diffusion Priors </span> </h1> \\",
+        "type": "code",
+        "location": "/gradio_app.py:1-22"
+    },
+    "31": {
+        "file_id": 2,
+        "content": "The code imports necessary libraries, defines example image prompts for generating videos, sets CSS styles, and initializes the DynamiCrafter interface using Gradio. The DynamiCrafter is an open-domain image animation tool that utilizes video diffusion priors to generate animated videos from input images.",
+        "type": "comment"
+    },
+    "32": {
+        "file_id": 2,
+        "content": "                      <h2 style='font-weight: 450; font-size: 1rem; margin: 0rem'>\\\n                        <a href='https://doubiiu.github.io/'>Jinbo Xing</a>, \\\n                        <a href='https://menghanxia.github.io/'>Menghan Xia</a>, <a href='https://yzhang2016.github.io/'>Yong Zhang</a>, \\\n                        <a href=''>Haoxin Chen</a>, <a href=''> Wangbo Yu</a>,\\\n                        <a href='https://github.com/hyliu'>Hanyuan Liu</a>, <a href='https://xinntao.github.io/'>Xintao Wang</a>,\\\n                        <a href='https://www.cse.cuhk.edu.hk/~ttwong/myself.html'>Tien-Tsin Wong</a>,\\\n                        <a href='https://scholar.google.com/citations?user=4oXBp9UAAAAJ&hl=zh-CN'>Ying Shan</a>\\\n                    </h2> \\\n                     <a style='font-size:18px;color: #000000' href='https://arxiv.org/abs/2310.12190'> [ArXiv] </a>\\\n                     <a style='font-size:18px;color: #000000' href='https://doubiiu.github.io/projects/DynamiCrafter/'> [Project Page] </a> \\",
+        "type": "code",
+        "location": "/gradio_app.py:23-32"
+    },
+    "33": {
+        "file_id": 2,
+        "content": "Code snippet displays author names with their corresponding GitHub links and a link to the project page for the DynamiCrafter project.",
+        "type": "comment"
+    },
+    "34": {
+        "file_id": 2,
+        "content": "                     <a style='font-size:18px;color: #000000' href='https://github.com/Doubiiu/DynamiCrafter'> [Github] </a> </div>\")\n        #######image2video######\n        with gr.Tab(label='Image2Video'):\n            with gr.Column():\n                with gr.Row():\n                    with gr.Column():\n                        with gr.Row():\n                            i2v_input_image = gr.Image(label=\"Input Image\",elem_id=\"input_img\")\n                        with gr.Row():\n                            i2v_input_text = gr.Text(label='Prompts')\n                        with gr.Row():\n                            i2v_seed = gr.Slider(label='Random Seed', minimum=0, maximum=10000, step=1, value=123)\n                            i2v_eta = gr.Slider(minimum=0.0, maximum=1.0, step=0.1, label='ETA', value=1.0, elem_id=\"i2v_eta\")\n                            i2v_cfg_scale = gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='CFG Scale', value=7.5, elem_id=\"i2v_cfg_scale\")\n                        with gr.Row():",
+        "type": "code",
+        "location": "/gradio_app.py:33-48"
+    },
+    "35": {
+        "file_id": 2,
+        "content": "This code snippet creates a tab in the Gradio application with the label \"Image2Video\". It includes input fields for an image, text prompts, and several sliders to control random seed, ETA, and CFG Scale. The UI is organized using rows and columns for better layout and user experience.",
+        "type": "comment"
+    },
+    "36": {
+        "file_id": 2,
+        "content": "                            i2v_steps = gr.Slider(minimum=1, maximum=60, step=1, elem_id=\"i2v_steps\", label=\"Sampling steps\", value=50)\n                            i2v_motion = gr.Slider(minimum=1, maximum=4, step=1, elem_id=\"i2v_motion\", label=\"Motion magnitude\", value=3)\n                        i2v_end_btn = gr.Button(\"Generate\")\n                    # with gr.Tab(label='Result'):\n                    with gr.Row():\n                        i2v_output_video = gr.Video(label=\"Generated Video\",elem_id=\"output_vid\",autoplay=True,show_share_button=True)\n                gr.Examples(examples=i2v_examples,\n                            inputs=[i2v_input_image, i2v_input_text, i2v_steps, i2v_cfg_scale, i2v_eta, i2v_motion, i2v_seed],\n                            outputs=[i2v_output_video],\n                            fn = image2video.get_image,\n                            cache_examples=os.getenv('SYSTEM') == 'spaces',\n                )\n            i2v_end_btn.click(inputs=[i2v_input_image, i2v_input_text, i2v_steps, i2v_cfg_scale, i2v_eta, i2v_motion, i2v_seed],",
+        "type": "code",
+        "location": "/gradio_app.py:49-62"
+    },
+    "37": {
+        "file_id": 2,
+        "content": "The code above defines several interactive elements for a user interface. It includes sliders to control the number of sampling steps and motion magnitude, a generate button, and a video element to display the generated output. The code also includes a function call to generate an image-to-video example.",
+        "type": "comment"
+    },
+    "38": {
+        "file_id": 2,
+        "content": "                            outputs=[i2v_output_video],\n                            fn = image2video.get_image\n            )\n    return dynamicrafter_iface\nif __name__ == \"__main__\":\n    result_dir = os.path.join('./', 'results')\n    dynamicrafter_iface = dynamicrafter_demo(result_dir)\n    dynamicrafter_iface.queue(max_size=12)\n    dynamicrafter_iface.launch(max_threads=1)\n    # dynamicrafter_iface.launch(server_name='0.0.0.0', server_port=80, max_threads=1)",
+        "type": "code",
+        "location": "/gradio_app.py:63-74"
+    },
+    "39": {
+        "file_id": 2,
+        "content": "Creates an instance of DynamicRafter Interface, sets the result directory, queues up to 12 items for processing, and launches it with one thread.",
+        "type": "comment"
+    },
+    "40": {
+        "file_id": 3,
+        "content": "/lvdm/basics.py",
+        "type": "filepath"
+    },
+    "41": {
+        "file_id": 3,
+        "content": "This code snippet handles convolutional layers in deep learning models, supports various modules including 1D-3D convolutions, linear layers, pooling, and nonlinearities. It includes a normalization layer and an instance of a hybrid conditioner that concatenates two configuration-based conditioners.",
+        "type": "summary"
+    },
+    "42": {
+        "file_id": 3,
+        "content": "# adopted from\n# https://github.com/openai/improved-diffusion/blob/main/improved_diffusion/gaussian_diffusion.py\n# and\n# https://github.com/lucidrains/denoising-diffusion-pytorch/blob/7706bdfc6f527f58d33f84b7b522e61e6e3164b3/denoising_diffusion_pytorch/denoising_diffusion_pytorch.py\n# and\n# https://github.com/openai/guided-diffusion/blob/0ba878e517b276c45d1195eb29f6f5f72659a05b/guided_diffusion/nn.py\n#\n# thanks!\nimport torch.nn as nn\nfrom utils.utils import instantiate_from_config\ndef disabled_train(self, mode=True):\n    \"\"\"Overwrite model.train with this function to make sure train/eval mode\n    does not change anymore.\"\"\"\n    return self\ndef zero_module(module):\n    \"\"\"\n    Zero out the parameters of a module and return it.\n    \"\"\"\n    for p in module.parameters():\n        p.detach().zero_()\n    return module\ndef scale_module(module, scale):\n    \"\"\"\n    Scale the parameters of a module and return it.\n    \"\"\"\n    for p in module.parameters():\n        p.detach().mul_(scale)\n    return module\ndef conv_nd(dims, *args, **kwargs):",
+        "type": "code",
+        "location": "/lvdm/basics.py:1-36"
+    },
+    "43": {
+        "file_id": 3,
+        "content": "This code snippet appears to be a module for handling convolutional layers in a deep learning model. It includes functions for changing the training mode, zeroing out and scaling parameters of modules, and creating convolutional layers with user-specified dimensions.",
+        "type": "comment"
+    },
+    "44": {
+        "file_id": 3,
+        "content": "    \"\"\"\n    Create a 1D, 2D, or 3D convolution module.\n    \"\"\"\n    if dims == 1:\n        return nn.Conv1d(*args, **kwargs)\n    elif dims == 2:\n        return nn.Conv2d(*args, **kwargs)\n    elif dims == 3:\n        return nn.Conv3d(*args, **kwargs)\n    raise ValueError(f\"unsupported dimensions: {dims}\")\ndef linear(*args, **kwargs):\n    \"\"\"\n    Create a linear module.\n    \"\"\"\n    return nn.Linear(*args, **kwargs)\ndef avg_pool_nd(dims, *args, **kwargs):\n    \"\"\"\n    Create a 1D, 2D, or 3D average pooling module.\n    \"\"\"\n    if dims == 1:\n        return nn.AvgPool1d(*args, **kwargs)\n    elif dims == 2:\n        return nn.AvgPool2d(*args, **kwargs)\n    elif dims == 3:\n        return nn.AvgPool3d(*args, **kwargs)\n    raise ValueError(f\"unsupported dimensions: {dims}\")\ndef nonlinearity(type='silu'):\n    if type == 'silu':\n        return nn.SiLU()\n    elif type == 'leaky_relu':\n        return nn.LeakyReLU()\nclass GroupNormSpecific(nn.GroupNorm):\n    def forward(self, x):\n        return super().forward(x.float()).type(x.dtype)\ndef normalization(channels, num_groups=32):",
+        "type": "code",
+        "location": "/lvdm/basics.py:37-81"
+    },
+    "45": {
+        "file_id": 3,
+        "content": "This code provides utility functions for creating various deep learning modules, including convolutions (1D, 2D, 3D), linear layers, average pooling (1D, 2D, 3D), and nonlinearities (SiLU or Leaky ReLU). The `GroupNormSpecific` class extends PyTorch's GroupNorm with a specific forward function to ensure correct output dtype.",
+        "type": "comment"
+    },
+    "46": {
+        "file_id": 3,
+        "content": "    \"\"\"\n    Make a standard normalization layer.\n    :param channels: number of input channels.\n    :return: an nn.Module for normalization.\n    \"\"\"\n    return GroupNormSpecific(num_groups, channels)\nclass HybridConditioner(nn.Module):\n    def __init__(self, c_concat_config, c_crossattn_config):\n        super().__init__()\n        self.concat_conditioner = instantiate_from_config(c_concat_config)\n        self.crossattn_conditioner = instantiate_from_config(c_crossattn_config)\n    def forward(self, c_concat, c_crossattn):\n        c_concat = self.concat_conditioner(c_concat)\n        c_crossattn = self.crossattn_conditioner(c_crossattn)\n        return {'c_concat': [c_concat], 'c_crossattn': [c_crossattn]}",
+        "type": "code",
+        "location": "/lvdm/basics.py:82-100"
+    },
+    "47": {
+        "file_id": 3,
+        "content": "The code defines a normalization layer and creates an instance of a hybrid conditioner that concatenates two configuration-based conditioners.",
+        "type": "comment"
+    },
+    "48": {
+        "file_id": 4,
+        "content": "/lvdm/common.py",
+        "type": "filepath"
+    },
+    "49": {
+        "file_id": 4,
+        "content": "The code offers utility functions for data processing, mixed-precision, tensor operations, and image/map detection. It also defines the `checkpoint` function to evaluate a function without caching while reducing memory usage with additional computational cost during backward passes.",
+        "type": "summary"
+    },
+    "50": {
+        "file_id": 4,
+        "content": "import math\nfrom inspect import isfunction\nimport torch\nfrom torch import nn\nimport torch.distributed as dist\ndef gather_data(data, return_np=True):\n    ''' gather data from multiple processes to one list '''\n    data_list = [torch.zeros_like(data) for _ in range(dist.get_world_size())]\n    dist.all_gather(data_list, data)  # gather not supported with NCCL\n    if return_np:\n        data_list = [data.cpu().numpy() for data in data_list]\n    return data_list\ndef autocast(f):\n    def do_autocast(*args, **kwargs):\n        with torch.cuda.amp.autocast(enabled=True,\n                                     dtype=torch.get_autocast_gpu_dtype(),\n                                     cache_enabled=torch.is_autocast_cache_enabled()):\n            return f(*args, **kwargs)\n    return do_autocast\ndef extract_into_tensor(a, t, x_shape):\n    b, *_ = t.shape\n    out = a.gather(-1, t)\n    return out.reshape(b, *((1,) * (len(x_shape) - 1)))\ndef noise_like(shape, device, repeat=False):\n    repeat_noise = lambda: torch.randn((1, *shape[1:]), device=device).repeat(shape[0], *((1,) * (len(shape) - 1)))",
+        "type": "code",
+        "location": "/lvdm/common.py:1-32"
+    },
+    "51": {
+        "file_id": 4,
+        "content": "\"gather_data\": Gathers data from multiple processes into a single list, optionally returning numpy arrays.\n\"autocast\": Enables automatic mixed-precision for functions using torch.cuda.amp.autocast().\n\"extract_into_tensor\": Extracts values from tensor 'a' at indices specified in tensor 't', reshaping as necessary.\n\"noise_like\": Creates random noise tensor of given shape on specified device, optionally repeatable for consecutive calls.",
+        "type": "comment"
+    },
+    "52": {
+        "file_id": 4,
+        "content": "    noise = lambda: torch.randn(shape, device=device)\n    return repeat_noise() if repeat else noise()\ndef default(val, d):\n    if exists(val):\n        return val\n    return d() if isfunction(d) else d\ndef exists(val):\n    return val is not None\ndef identity(*args, **kwargs):\n    return nn.Identity()\ndef uniq(arr):\n    return{el: True for el in arr}.keys()\ndef mean_flat(tensor):\n    \"\"\"\n    Take the mean over all non-batch dimensions.\n    \"\"\"\n    return tensor.mean(dim=list(range(1, len(tensor.shape))))\ndef ismap(x):\n    if not isinstance(x, torch.Tensor):\n        return False\n    return (len(x.shape) == 4) and (x.shape[1] > 3)\ndef isimage(x):\n    if not isinstance(x,torch.Tensor):\n        return False\n    return (len(x.shape) == 4) and (x.shape[1] == 3 or x.shape[1] == 1)\ndef max_neg_value(t):\n    return -torch.finfo(t.dtype).max\ndef shape_to_str(x):\n    shape_str = \"x\".join([str(x) for x in x.shape])\n    return shape_str\ndef init_(tensor):\n    dim = tensor.shape[-1]\n    std = 1 / math.sqrt(dim)\n    tensor.uniform_(-std, std)",
+        "type": "code",
+        "location": "/lvdm/common.py:33-77"
+    },
+    "53": {
+        "file_id": 4,
+        "content": "This code contains several utility functions, including noise generation, checking if a value exists, identity mapping, unique elements extraction, calculating mean over non-batch dimensions, image and map detection, max negative value calculation, shape conversion to string, and tensor initialization.",
+        "type": "comment"
+    },
+    "54": {
+        "file_id": 4,
+        "content": "    return tensor\nckpt = torch.utils.checkpoint.checkpoint\ndef checkpoint(func, inputs, params, flag):\n    \"\"\"\n    Evaluate a function without caching intermediate activations, allowing for\n    reduced memory at the expense of extra compute in the backward pass.\n    :param func: the function to evaluate.\n    :param inputs: the argument sequence to pass to `func`.\n    :param params: a sequence of parameters `func` depends on but does not\n                   explicitly take as arguments.\n    :param flag: if False, disable gradient checkpointing.\n    \"\"\"\n    if flag:\n        return ckpt(func, *inputs, use_reentrant=False)\n    else:\n        return func(*inputs)",
+        "type": "code",
+        "location": "/lvdm/common.py:78-94"
+    },
+    "55": {
+        "file_id": 4,
+        "content": "This code defines a function called `checkpoint` that evaluates a given function without caching intermediate activations. It reduces memory usage by incurring additional computational cost during backward passes. The function takes four arguments: the function to evaluate, input arguments for the function, parameters the function depends on but does not explicitly take as arguments, and a flag indicating whether to use gradient checkpointing or not.",
+        "type": "comment"
+    },
+    "56": {
+        "file_id": 5,
+        "content": "/lvdm/distributions.py",
+        "type": "filepath"
+    },
+    "57": {
+        "file_id": 5,
+        "content": "The code defines AbstractDistribution class with sample, mode methods and derived classes DiracDistribution, DiagonalGaussianDistribution for implementing specific distributions. It calculates KL divergence between Gaussian distributions, normalizes samples, computes negative log-likelihood, and provides mode function. Used in image generation and machine learning tasks. The function calculates KL divergence between two Gaussian distributions using mean1, logvar1, mean2, and logvar2 as inputs, ensuring at least one argument is a tensor for efficient computation.",
+        "type": "summary"
+    },
+    "58": {
+        "file_id": 5,
+        "content": "import torch\nimport numpy as np\nclass AbstractDistribution:\n    def sample(self):\n        raise NotImplementedError()\n    def mode(self):\n        raise NotImplementedError()\nclass DiracDistribution(AbstractDistribution):\n    def __init__(self, value):\n        self.value = value\n    def sample(self):\n        return self.value\n    def mode(self):\n        return self.value\nclass DiagonalGaussianDistribution(object):\n    def __init__(self, parameters, deterministic=False):\n        self.parameters = parameters\n        self.mean, self.logvar = torch.chunk(parameters, 2, dim=1)\n        self.logvar = torch.clamp(self.logvar, -30.0, 20.0)\n        self.deterministic = deterministic\n        self.std = torch.exp(0.5 * self.logvar)\n        self.var = torch.exp(self.logvar)\n        if self.deterministic:\n            self.var = self.std = torch.zeros_like(self.mean).to(device=self.parameters.device)\n    def sample(self, noise=None):\n        if noise is None:\n            noise = torch.randn(self.mean.shape)\n        x = self.mean + self.std * noise.to(device=self.parameters.device)",
+        "type": "code",
+        "location": "/lvdm/distributions.py:1-39"
+    },
+    "59": {
+        "file_id": 5,
+        "content": "The code defines an AbstractDistribution class with sample and mode methods, along with two derived classes (DiracDistribution and DiagonalGaussianDistribution) for implementing specific distributions. The DiracDistribution represents a delta function at a specified value, while DiagonalGaussianDistribution represents a diagonal Gaussian distribution with learnable mean and log variance parameters. The latter also has options to make the distribution deterministic or stochastic by setting the std and var accordingly.",
+        "type": "comment"
+    },
+    "60": {
+        "file_id": 5,
+        "content": "        return x\n    def kl(self, other=None):\n        if self.deterministic:\n            return torch.Tensor([0.])\n        else:\n            if other is None:\n                return 0.5 * torch.sum(torch.pow(self.mean, 2)\n                                       + self.var - 1.0 - self.logvar,\n                                       dim=[1, 2, 3])\n            else:\n                return 0.5 * torch.sum(\n                    torch.pow(self.mean - other.mean, 2) / other.var\n                    + self.var / other.var - 1.0 - self.logvar + other.logvar,\n                    dim=[1, 2, 3])\n    def nll(self, sample, dims=[1,2,3]):\n        if self.deterministic:\n            return torch.Tensor([0.])\n        logtwopi = np.log(2.0 * np.pi)\n        return 0.5 * torch.sum(\n            logtwopi + self.logvar + torch.pow(sample - self.mean, 2) / self.var,\n            dim=dims)\n    def mode(self):\n        return self.mean\ndef normal_kl(mean1, logvar1, mean2, logvar2):\n    \"\"\"\n    source: https://github.com/openai/guided-diffusion/blob/27c20a8fab9cb472df5d6bdd6c8d11c8f430b924/guided_diffusion/losses.py#L12",
+        "type": "code",
+        "location": "/lvdm/distributions.py:40-70"
+    },
+    "61": {
+        "file_id": 5,
+        "content": "The code calculates the Kullback-Leibler (KL) divergence between two Gaussian distributions, normalizes the input sample based on its mean and variance, and computes the negative log-likelihood of the input sample. It also provides a mode function for retrieving the mean value. The code is used in image generation and other machine learning tasks that involve probability distributions.",
+        "type": "comment"
+    },
+    "62": {
+        "file_id": 5,
+        "content": "    Compute the KL divergence between two gaussians.\n    Shapes are automatically broadcasted, so batches can be compared to\n    scalars, among other use cases.\n    \"\"\"\n    tensor = None\n    for obj in (mean1, logvar1, mean2, logvar2):\n        if isinstance(obj, torch.Tensor):\n            tensor = obj\n            break\n    assert tensor is not None, \"at least one argument must be a Tensor\"\n    # Force variances to be Tensors. Broadcasting helps convert scalars to\n    # Tensors, but it does not work for torch.exp().\n    logvar1, logvar2 = [\n        x if isinstance(x, torch.Tensor) else torch.tensor(x).to(tensor)\n        for x in (logvar1, logvar2)\n    ]\n    return 0.5 * (\n        -1.0\n        + logvar2\n        - logvar1\n        + torch.exp(logvar1 - logvar2)\n        + ((mean1 - mean2) ** 2) * torch.exp(-logvar2)\n    )",
+        "type": "code",
+        "location": "/lvdm/distributions.py:71-95"
+    },
+    "63": {
+        "file_id": 5,
+        "content": "This function calculates the KL divergence between two Gaussian distributions. It takes four arguments: mean1, logvar1, mean2, and logvar2. The code ensures that at least one argument is a tensor and forces variances to be tensors for efficient computation. The final result is returned after applying various mathematical operations on the inputs.",
+        "type": "comment"
+    },
+    "64": {
+        "file_id": 6,
+        "content": "/lvdm/ema.py",
+        "type": "filepath"
+    },
+    "65": {
+        "file_id": 6,
+        "content": "The code defines a PyTorch class \"LitEma\" for Exponential Moving Average, initializes EMA parameters and registers buffers, applies EMA calculation during training and manages shadow parameters. It also provides temporary storage and restoration for torch.nn.Parameter parameters useful for model validation without affecting optimization process.",
+        "type": "summary"
+    },
+    "66": {
+        "file_id": 6,
+        "content": "import torch\nfrom torch import nn\nclass LitEma(nn.Module):\n    def __init__(self, model, decay=0.9999, use_num_upates=True):\n        super().__init__()\n        if decay < 0.0 or decay > 1.0:\n            raise ValueError('Decay must be between 0 and 1')\n        self.m_name2s_name = {}\n        self.register_buffer('decay', torch.tensor(decay, dtype=torch.float32))\n        self.register_buffer('num_updates', torch.tensor(0,dtype=torch.int) if use_num_upates\n                             else torch.tensor(-1,dtype=torch.int))\n        for name, p in model.named_parameters():\n            if p.requires_grad:\n                #remove as '.'-character is not allowed in buffers\n                s_name = name.replace('.','')\n                self.m_name2s_name.update({name:s_name})\n                self.register_buffer(s_name,p.clone().detach().data)\n        self.collected_params = []\n    def forward(self,model):\n        decay = self.decay\n        if self.num_updates >= 0:\n            self.num_updates += 1\n            decay = min(self.decay,(1 + self.num_updates) / (10 + self.num_updates))",
+        "type": "code",
+        "location": "/lvdm/ema.py:1-30"
+    },
+    "67": {
+        "file_id": 6,
+        "content": "The code defines a PyTorch class \"LitEma\" that implements Exponential Moving Average (EMA) for a given model. It initializes the EMA parameters and registers buffers to store the moving averages of the model's parameters. The forward method updates the decay rate based on the number of parameter updates and applies the EMA calculation during model training.",
+        "type": "comment"
+    },
+    "68": {
+        "file_id": 6,
+        "content": "        one_minus_decay = 1.0 - decay\n        with torch.no_grad():\n            m_param = dict(model.named_parameters())\n            shadow_params = dict(self.named_buffers())\n            for key in m_param:\n                if m_param[key].requires_grad:\n                    sname = self.m_name2s_name[key]\n                    shadow_params[sname] = shadow_params[sname].type_as(m_param[key])\n                    shadow_params[sname].sub_(one_minus_decay * (shadow_params[sname] - m_param[key]))\n                else:\n                    assert not key in self.m_name2s_name\n    def copy_to(self, model):\n        m_param = dict(model.named_parameters())\n        shadow_params = dict(self.named_buffers())\n        for key in m_param:\n            if m_param[key].requires_grad:\n                m_param[key].data.copy_(shadow_params[self.m_name2s_name[key]].data)\n            else:\n                assert not key in self.m_name2s_name\n    def store(self, parameters):\n        \"\"\"\n        Save the current parameters for restoring later.",
+        "type": "code",
+        "location": "/lvdm/ema.py:32-57"
+    },
+    "69": {
+        "file_id": 6,
+        "content": "This code defines a class that appears to manage shadow parameters (backup for original model parameters). It compares the original and backup parameters, updating the backup based on a decay value. The `copy_to` function transfers the saved parameters back into the model, while `store` saves the current parameters to be used later.",
+        "type": "comment"
+    },
+    "70": {
+        "file_id": 6,
+        "content": "        Args:\n          parameters: Iterable of `torch.nn.Parameter`; the parameters to be\n            temporarily stored.\n        \"\"\"\n        self.collected_params = [param.clone() for param in parameters]\n    def restore(self, parameters):\n        \"\"\"\n        Restore the parameters stored with the `store` method.\n        Useful to validate the model with EMA parameters without affecting the\n        original optimization process. Store the parameters before the\n        `copy_to` method. After validation (or model saving), use this to\n        restore the former parameters.\n        Args:\n          parameters: Iterable of `torch.nn.Parameter`; the parameters to be\n            updated with the stored parameters.\n        \"\"\"\n        for c_param, param in zip(self.collected_params, parameters):\n            param.data.copy_(c_param.data)",
+        "type": "code",
+        "location": "/lvdm/ema.py:58-76"
+    },
+    "71": {
+        "file_id": 6,
+        "content": "The code defines a class with methods to store and restore torch.nn.Parameter parameters temporarily, useful for validating the model without affecting the original optimization process.",
+        "type": "comment"
+    },
+    "72": {
+        "file_id": 7,
+        "content": "/lvdm/models/autoencoder.py",
+        "type": "filepath"
+    },
+    "73": {
+        "file_id": 7,
+        "content": "The code defines the \"AutoencoderKL\" class, initializes variables and directories, creates an autoencoder model with colorization and IdentityFirstStage, provides encode/decode functions, optimizer setup, logging images, and getting decoder weights. Another function returns input without performing operations, suitable for model building or placeholder methods.",
+        "type": "summary"
+    },
+    "74": {
+        "file_id": 7,
+        "content": "import os\nfrom contextlib import contextmanager\nimport torch\nimport numpy as np\nfrom einops import rearrange\nimport torch.nn.functional as F\nimport pytorch_lightning as pl\nfrom lvdm.modules.networks.ae_modules import Encoder, Decoder\nfrom lvdm.distributions import DiagonalGaussianDistribution\nfrom utils.utils import instantiate_from_config\nclass AutoencoderKL(pl.LightningModule):\n    def __init__(self,\n                 ddconfig,\n                 lossconfig,\n                 embed_dim,\n                 ckpt_path=None,\n                 ignore_keys=[],\n                 image_key=\"image\",\n                 colorize_nlabels=None,\n                 monitor=None,\n                 test=False,\n                 logdir=None,\n                 input_dim=4,\n                 test_args=None,\n                 ):\n        super().__init__()\n        self.image_key = image_key\n        self.encoder = Encoder(**ddconfig)\n        self.decoder = Decoder(**ddconfig)\n        self.loss = instantiate_from_config(lossconfig)\n        assert ddconfig[\"double_z\"]",
+        "type": "code",
+        "location": "/lvdm/models/autoencoder.py:1-33"
+    },
+    "75": {
+        "file_id": 7,
+        "content": "The code is defining a class named \"AutoencoderKL\" that extends the \"pl.LightningModule\" class from PyTorch Lightning library. The class contains an encoder and decoder, both defined by the ddconfig parameters. It also includes a loss function instantiated from the provided loss configuration. This AutoencoderKL class is used for autoencoding tasks in the LVDM (Latent Variable Dynamic Modeling) framework.",
+        "type": "comment"
+    },
+    "76": {
+        "file_id": 7,
+        "content": "        self.quant_conv = torch.nn.Conv2d(2*ddconfig[\"z_channels\"], 2*embed_dim, 1)\n        self.post_quant_conv = torch.nn.Conv2d(embed_dim, ddconfig[\"z_channels\"], 1)\n        self.embed_dim = embed_dim\n        self.input_dim = input_dim\n        self.test = test\n        self.test_args = test_args\n        self.logdir = logdir\n        if colorize_nlabels is not None:\n            assert type(colorize_nlabels)==int\n            self.register_buffer(\"colorize\", torch.randn(3, colorize_nlabels, 1, 1))\n        if monitor is not None:\n            self.monitor = monitor\n        if ckpt_path is not None:\n            self.init_from_ckpt(ckpt_path, ignore_keys=ignore_keys)\n        if self.test:\n            self.init_test()\n    def init_test(self,):\n        self.test = True\n        save_dir = os.path.join(self.logdir, \"test\")\n        if 'ckpt' in self.test_args:\n            ckpt_name = os.path.basename(self.test_args.ckpt).split('.ckpt')[0] + f'_epoch{self._cur_epoch}'\n            self.root = os.path.join(save_dir, ckpt_name)",
+        "type": "code",
+        "location": "/lvdm/models/autoencoder.py:34-56"
+    },
+    "77": {
+        "file_id": 7,
+        "content": "In this code, we see the initialization of an object with various parameters such as convolution layers, embed and input dimensions, and buffer variables. It also includes assertions for certain conditions and method calls for initializing test mode and checking the log directory. Additionally, it provides functions to initialize in test mode and to load weights from a checkpoint file if available.",
+        "type": "comment"
+    },
+    "78": {
+        "file_id": 7,
+        "content": "        else:\n            self.root = save_dir\n        if 'test_subdir' in self.test_args:\n            self.root = os.path.join(save_dir, self.test_args.test_subdir)\n        self.root_zs = os.path.join(self.root, \"zs\")\n        self.root_dec = os.path.join(self.root, \"reconstructions\")\n        self.root_inputs = os.path.join(self.root, \"inputs\")\n        os.makedirs(self.root, exist_ok=True)\n        if self.test_args.save_z:\n            os.makedirs(self.root_zs, exist_ok=True)\n        if self.test_args.save_reconstruction:\n            os.makedirs(self.root_dec, exist_ok=True)\n        if self.test_args.save_input:\n            os.makedirs(self.root_inputs, exist_ok=True)\n        assert(self.test_args is not None)\n        self.test_maximum = getattr(self.test_args, 'test_maximum', None) \n        self.count = 0\n        self.eval_metrics = {}\n        self.decodes = []\n        self.save_decode_samples = 2048\n    def init_from_ckpt(self, path, ignore_keys=list()):\n        sd = torch.load(path, map_location=\"cpu\")\n        try:",
+        "type": "code",
+        "location": "/lvdm/models/autoencoder.py:57-82"
+    },
+    "79": {
+        "file_id": 7,
+        "content": "This code sets the save directory for various file types and creates directories if they do not already exist. It also checks if a test subdirectory is specified, handles saving different types of data (z-scores, reconstructions, inputs), and initializes variables such as maximum count, evaluation metrics, and decode samples. The code then attempts to load a checkpoint from a given path while ignoring specified keys.",
+        "type": "comment"
+    },
+    "80": {
+        "file_id": 7,
+        "content": "            self._cur_epoch = sd['epoch']\n            sd = sd[\"state_dict\"]\n        except:\n            self._cur_epoch = 'null'\n        keys = list(sd.keys())\n        for k in keys:\n            for ik in ignore_keys:\n                if k.startswith(ik):\n                    print(\"Deleting key {} from state_dict.\".format(k))\n                    del sd[k]\n        self.load_state_dict(sd, strict=False)\n        # self.load_state_dict(sd, strict=True)\n        print(f\"Restored from {path}\")\n    def encode(self, x, **kwargs):\n        h = self.encoder(x)\n        moments = self.quant_conv(h)\n        posterior = DiagonalGaussianDistribution(moments)\n        return posterior\n    def decode(self, z, **kwargs):\n        z = self.post_quant_conv(z)\n        dec = self.decoder(z)\n        return dec\n    def forward(self, input, sample_posterior=True):\n        posterior = self.encode(input)\n        if sample_posterior:\n            z = posterior.sample()\n        else:\n            z = posterior.mode()\n        dec = self.decode(z)\n        return dec, posterior",
+        "type": "code",
+        "location": "/lvdm/models/autoencoder.py:83-116"
+    },
+    "81": {
+        "file_id": 7,
+        "content": "The code is defining a class for an autoencoder model. It loads the state dictionary from a given path, ignoring certain keys and loading without strict type checking. The model has encoder and decoder components. The `encode` function takes input and outputs a DiagonalGaussianDistribution object representing the posterior. The `decode` function takes a latent variable z (from sampling or mode of the posterior) and produces a decoded output. The `forward` function performs both encoding and decoding operations, returning both the decoded output and the posterior distribution.",
+        "type": "comment"
+    },
+    "82": {
+        "file_id": 7,
+        "content": "    def get_input(self, batch, k):\n        x = batch[k]\n        if x.dim() == 5 and self.input_dim == 4:\n            b,c,t,h,w = x.shape\n            self.b = b\n            self.t = t \n            x = rearrange(x, 'b c t h w -> (b t) c h w')\n        return x\n    def training_step(self, batch, batch_idx, optimizer_idx):\n        inputs = self.get_input(batch, self.image_key)\n        reconstructions, posterior = self(inputs)\n        if optimizer_idx == 0:\n            # train encoder+decoder+logvar\n            aeloss, log_dict_ae = self.loss(inputs, reconstructions, posterior, optimizer_idx, self.global_step,\n                                            last_layer=self.get_last_layer(), split=\"train\")\n            self.log(\"aeloss\", aeloss, prog_bar=True, logger=True, on_step=True, on_epoch=True)\n            self.log_dict(log_dict_ae, prog_bar=False, logger=True, on_step=True, on_epoch=False)\n            return aeloss\n        if optimizer_idx == 1:\n            # train the discriminator\n            discloss, log_dict_disc = self.loss(inputs, reconstructions, posterior, optimizer_idx, self.global_step,",
+        "type": "code",
+        "location": "/lvdm/models/autoencoder.py:118-142"
+    },
+    "83": {
+        "file_id": 7,
+        "content": "This code defines two methods, `get_input` and `training_step`, in a machine learning model. The `get_input` method takes a batch of data and reshapes it for input to the model based on the specified input dimensions. The `training_step` method uses the input data to pass through the encoder-decoder model, calculate loss using the defined `loss` function, and log the training loss if the optimizer index is 0. If the optimizer index is 1, it trains the discriminator part of the model.",
+        "type": "comment"
+    },
+    "84": {
+        "file_id": 7,
+        "content": "                                                last_layer=self.get_last_layer(), split=\"train\")\n            self.log(\"discloss\", discloss, prog_bar=True, logger=True, on_step=True, on_epoch=True)\n            self.log_dict(log_dict_disc, prog_bar=False, logger=True, on_step=True, on_epoch=False)\n            return discloss\n    def validation_step(self, batch, batch_idx):\n        inputs = self.get_input(batch, self.image_key)\n        reconstructions, posterior = self(inputs)\n        aeloss, log_dict_ae = self.loss(inputs, reconstructions, posterior, 0, self.global_step,\n                                        last_layer=self.get_last_layer(), split=\"val\")\n        discloss, log_dict_disc = self.loss(inputs, reconstructions, posterior, 1, self.global_step,\n                                            last_layer=self.get_last_layer(), split=\"val\")\n        self.log(\"val/rec_loss\", log_dict_ae[\"val/rec_loss\"])\n        self.log_dict(log_dict_ae)\n        self.log_dict(log_dict_disc)\n        return self.log_dict",
+        "type": "code",
+        "location": "/lvdm/models/autoencoder.py:143-161"
+    },
+    "85": {
+        "file_id": 7,
+        "content": "This code snippet defines two methods, \"training_step\" and \"validation_step\", which appear to be part of a deep learning model. In the training step, the model takes an input batch, processes it, and calculates a reconstruction loss (aeloss) and a discriminator loss (discloss). It logs these losses for progress tracking. In the validation step, the model does similar processing and logging but specifically for the validation dataset. Both methods return their respective logs.",
+        "type": "comment"
+    },
+    "86": {
+        "file_id": 7,
+        "content": "    def configure_optimizers(self):\n        lr = self.learning_rate\n        opt_ae = torch.optim.Adam(list(self.encoder.parameters())+\n                                  list(self.decoder.parameters())+\n                                  list(self.quant_conv.parameters())+\n                                  list(self.post_quant_conv.parameters()),\n                                  lr=lr, betas=(0.5, 0.9))\n        opt_disc = torch.optim.Adam(self.loss.discriminator.parameters(),\n                                    lr=lr, betas=(0.5, 0.9))\n        return [opt_ae, opt_disc], []\n    def get_last_layer(self):\n        return self.decoder.conv_out.weight\n    @torch.no_grad()\n    def log_images(self, batch, only_inputs=False, **kwargs):\n        log = dict()\n        x = self.get_input(batch, self.image_key)\n        x = x.to(self.device)\n        if not only_inputs:\n            xrec, posterior = self(x)\n            if x.shape[1] > 3:\n                # colorize with random projection\n                assert xrec.shape[1] > 3",
+        "type": "code",
+        "location": "/lvdm/models/autoencoder.py:163-186"
+    },
+    "87": {
+        "file_id": 7,
+        "content": "This code defines a function `configure_optimizers` that sets up optimizers for the encoder, decoder, and quantization components with specified learning rate. It also sets up an optimizer for the discriminator. The function returns both optimizers as a tuple. The `get_last_layer` function returns the weight of the last layer in the decoder component. Lastly, the `log_images` function logs images from a batch, optionally including reconstructed images and posterior. It also colorizes reconstructed images if they have more than 3 channels.",
+        "type": "comment"
+    },
+    "88": {
+        "file_id": 7,
+        "content": "                x = self.to_rgb(x)\n                xrec = self.to_rgb(xrec)\n            log[\"samples\"] = self.decode(torch.randn_like(posterior.sample()))\n            log[\"reconstructions\"] = xrec\n        log[\"inputs\"] = x\n        return log\n    def to_rgb(self, x):\n        assert self.image_key == \"segmentation\"\n        if not hasattr(self, \"colorize\"):\n            self.register_buffer(\"colorize\", torch.randn(3, x.shape[1], 1, 1).to(x))\n        x = F.conv2d(x, weight=self.colorize)\n        x = 2.*(x-x.min())/(x.max()-x.min()) - 1.\n        return x\nclass IdentityFirstStage(torch.nn.Module):\n    def __init__(self, *args, vq_interface=False, **kwargs):\n        self.vq_interface = vq_interface  # TODO: Should be true by default but check to not break older stuff\n        super().__init__()\n    def encode(self, x, *args, **kwargs):\n        return x\n    def decode(self, x, *args, **kwargs):\n        return x\n    def quantize(self, x, *args, **kwargs):\n        if self.vq_interface:\n            return x, None, [None, None, None]",
+        "type": "code",
+        "location": "/lvdm/models/autoencoder.py:187-215"
+    },
+    "89": {
+        "file_id": 7,
+        "content": "The code defines an Autoencoder model with a colorization step and an IdentityFirstStage, which encodes and decodes the input without any processing. The to_rgb function performs colorization by applying a convolution operation and scaling the result between -1 and 1. The IdentityFirstStage returns the input unchanged from its encode and decode functions.",
+        "type": "comment"
+    },
+    "90": {
+        "file_id": 7,
+        "content": "        return x\n    def forward(self, x, *args, **kwargs):\n        return x",
+        "type": "code",
+        "location": "/lvdm/models/autoencoder.py:216-219"
+    },
+    "91": {
+        "file_id": 7,
+        "content": "This code defines a function \"return x\" and another one named \"forward\". Both functions simply return the input \"x\", without performing any operations. It could be used for model building or placeholder methods.",
+        "type": "comment"
+    },
+    "92": {
+        "file_id": 8,
+        "content": "/lvdm/models/ddpm3d.py",
+        "type": "filepath"
+    },
+    "93": {
+        "file_id": 8,
+        "content": "This DDPM module in PyTorch Lightning defines a model for predicting start values and generating images using LatentDiffusion class, includes conditional stages, and computes mean and variance.",
+        "type": "summary"
+    },
+    "94": {
+        "file_id": 8,
+        "content": "\"\"\"\nwild mixture of\nhttps://github.com/openai/improved-diffusion/blob/e94489283bb876ac1477d5dd7709bbbd2d9902ce/improved_diffusion/gaussian_diffusion.py\nhttps://github.com/lucidrains/denoising-diffusion-pytorch/blob/7706bdfc6f527f58d33f84b7b522e61e6e3164b3/denoising_diffusion_pytorch/denoising_diffusion_pytorch.py\nhttps://github.com/CompVis/taming-transformers\n-- merci\n\"\"\"\nfrom functools import partial\nfrom contextlib import contextmanager\nimport numpy as np\nfrom tqdm import tqdm\nfrom einops import rearrange, repeat\nimport logging\nmainlogger = logging.getLogger('mainlogger')\nimport torch\nimport torch.nn as nn\nfrom torchvision.utils import make_grid\nimport pytorch_lightning as pl\nfrom utils.utils import instantiate_from_config\nfrom lvdm.ema import LitEma\nfrom lvdm.distributions import DiagonalGaussianDistribution\nfrom lvdm.models.utils_diffusion import make_beta_schedule\nfrom lvdm.basics import disabled_train\nfrom lvdm.common import (\n    extract_into_tensor,\n    noise_like,\n    exists,\n    default\n)\n__conditioning_keys__ = {'concat': 'c_concat',",
+        "type": "code",
+        "location": "/lvdm/models/ddpm3d.py:1-32"
+    },
+    "95": {
+        "file_id": 8,
+        "content": "This code appears to be a mixture of various sources and serves as a module for denoising diffusion probability models. It includes functions for making beta schedules, creating diagonal Gaussian distributions, and handling different conditioning keys. The code also utilizes the PyTorch Lightning framework for training and includes various other import statements from related modules. The main logger is being used to log important information during execution.",
+        "type": "comment"
+    },
+    "96": {
+        "file_id": 8,
+        "content": "                         'crossattn': 'c_crossattn',\n                         'adm': 'y'}\nclass DDPM(pl.LightningModule):\n    # classic DDPM with Gaussian diffusion, in image space\n    def __init__(self,\n                 unet_config,\n                 timesteps=1000,\n                 beta_schedule=\"linear\",\n                 loss_type=\"l2\",\n                 ckpt_path=None,\n                 ignore_keys=[],\n                 load_only_unet=False,\n                 monitor=None,\n                 use_ema=True,\n                 first_stage_key=\"image\",\n                 image_size=256,\n                 channels=3,\n                 log_every_t=100,\n                 clip_denoised=True,\n                 linear_start=1e-4,\n                 linear_end=2e-2,\n                 cosine_s=8e-3,\n                 given_betas=None,\n                 original_elbo_weight=0.,\n                 v_posterior=0.,  # weight for choosing posterior variance as sigma = (1-v) * beta_tilde + v * beta\n                 l_simple_weight=1.,\n                 conditioning_key=None,",
+        "type": "code",
+        "location": "/lvdm/models/ddpm3d.py:33-60"
+    },
+    "97": {
+        "file_id": 8,
+        "content": "This code defines a class for DDPM (Denoising Diffusion Probabilistic Models) with Gaussian diffusion in image space. It includes various parameters such as unet_config, timesteps, beta_schedule, loss_type, ckpt_path, ignore_keys, load_only_unet, monitor, use_ema, first_stage_key, image_size, channels, log_every_t, clip_denoised, linear_start, linear_end, cosine_s, given_betas, original_elbo_weight, v_posterior, l_simple_weight, and conditioning_key.",
+        "type": "comment"
+    },
+    "98": {
+        "file_id": 8,
+        "content": "                 parameterization=\"eps\",  # all assuming fixed variance schedules\n                 scheduler_config=None,\n                 use_positional_encodings=False,\n                 learn_logvar=False,\n                 logvar_init=0.,\n                 ):\n        super().__init__()\n        assert parameterization in [\"eps\", \"x0\", \"v\"], 'currently only supporting \"eps\" and \"x0\" and \"v\"'\n        self.parameterization = parameterization\n        mainlogger.info(f\"{self.__class__.__name__}: Running in {self.parameterization}-prediction mode\")\n        self.cond_stage_model = None\n        self.clip_denoised = clip_denoised\n        self.log_every_t = log_every_t\n        self.first_stage_key = first_stage_key\n        self.channels = channels\n        self.temporal_length = unet_config.params.temporal_length\n        self.image_size = image_size  # try conv?\n        if isinstance(self.image_size, int):\n            self.image_size = [self.image_size, self.image_size]\n        self.use_positional_encodings = use_positional_encodings",
+        "type": "code",
+        "location": "/lvdm/models/ddpm3d.py:61-80"
+    },
+    "99": {
+        "file_id": 8,
+        "content": "This code initializes a class instance for a model that performs denoising diffusion probabilistic models (DDPMs). It takes several parameters including the model parameterization, whether to use positional encodings or not, and if logvar should be learned. The code checks the validity of the parameterization and logs the mode being used before setting up other attributes like clip_denoised, log_every_t, first_stage_key, channels, temporal_length, image_size, and use_positional_encodings.",
+        "type": "comment"
+    }
+}

@@ -1,0 +1,145 @@
+{
+    "url": {
+        "full": "https://github.com/Doubiiu/DynamiCrafter",
+        "partial": "Doubiiu/DynamiCrafter"
+    },
+    "file_mapping": {
+        "0": {
+            "filepath": "/README.md",
+            "entry_id": 0,
+            "language_id": "markdown"
+        },
+        "1": {
+            "filepath": "/configs/inference_256_v1.0.yaml",
+            "entry_id": 20,
+            "language_id": "yaml"
+        },
+        "2": {
+            "filepath": "/gradio_app.py",
+            "entry_id": 28,
+            "language_id": "python"
+        },
+        "3": {
+            "filepath": "/lvdm/basics.py",
+            "entry_id": 40,
+            "language_id": "python"
+        },
+        "4": {
+            "filepath": "/lvdm/common.py",
+            "entry_id": 48,
+            "language_id": "python"
+        },
+        "5": {
+            "filepath": "/lvdm/distributions.py",
+            "entry_id": 56,
+            "language_id": "python"
+        },
+        "6": {
+            "filepath": "/lvdm/ema.py",
+            "entry_id": 64,
+            "language_id": "python"
+        },
+        "7": {
+            "filepath": "/lvdm/models/autoencoder.py",
+            "entry_id": 72,
+            "language_id": "python"
+        },
+        "8": {
+            "filepath": "/lvdm/models/ddpm3d.py",
+            "entry_id": 92,
+            "language_id": "python"
+        },
+        "9": {
+            "filepath": "/lvdm/models/samplers/ddim.py",
+            "entry_id": 156,
+            "language_id": "python"
+        },
+        "10": {
+            "filepath": "/lvdm/models/samplers/ddim_multiplecond.py",
+            "entry_id": 188,
+            "language_id": "python"
+        },
+        "11": {
+            "filepath": "/lvdm/models/utils_diffusion.py",
+            "entry_id": 220,
+            "language_id": "python"
+        },
+        "12": {
+            "filepath": "/lvdm/modules/attention.py",
+            "entry_id": 232,
+            "language_id": "python"
+        },
+        "13": {
+            "filepath": "/lvdm/modules/encoders/condition.py",
+            "entry_id": 276,
+            "language_id": "python"
+        },
+        "14": {
+            "filepath": "/lvdm/modules/encoders/resampler.py",
+            "entry_id": 306,
+            "language_id": "python"
+        },
+        "15": {
+            "filepath": "/lvdm/modules/networks/ae_modules.py",
+            "entry_id": 318,
+            "language_id": "python"
+        },
+        "16": {
+            "filepath": "/lvdm/modules/networks/openaimodel3d.py",
+            "entry_id": 386,
+            "language_id": "python"
+        },
+        "17": {
+            "filepath": "/lvdm/modules/x_transformer.py",
+            "entry_id": 438,
+            "language_id": "python"
+        },
+        "18": {
+            "filepath": "/prompts/test_prompts.txt",
+            "entry_id": 480,
+            "language_id": "plain-text"
+        },
+        "19": {
+            "filepath": "/requirements.txt",
+            "entry_id": 484,
+            "language_id": "plain-text"
+        },
+        "20": {
+            "filepath": "/scripts/evaluation/ddp_wrapper.py",
+            "entry_id": 488,
+            "language_id": "python"
+        },
+        "21": {
+            "filepath": "/scripts/evaluation/funcs.py",
+            "entry_id": 494,
+            "language_id": "python"
+        },
+        "22": {
+            "filepath": "/scripts/evaluation/inference.py",
+            "entry_id": 514,
+            "language_id": "python"
+        },
+        "23": {
+            "filepath": "/scripts/gradio/i2v_test.py",
+            "entry_id": 546,
+            "language_id": "python"
+        },
+        "24": {
+            "filepath": "/scripts/run.sh",
+            "entry_id": 558,
+            "language_id": "shell"
+        },
+        "25": {
+            "filepath": "/scripts/run_mp.sh",
+            "entry_id": 562,
+            "language_id": "shell"
+        },
+        "26": {
+            "filepath": "/utils/utils.py",
+            "entry_id": 568,
+            "language_id": "python"
+        }
+    },
+    "project_name": "DynamiCrafter",
+    "split_count": 6
+}

@@ -1,0 +1,15 @@
+{
+    "summary": "The script performs inference on a DynamiCrafter model using single or multi-GPUs, executing with specific parameters and utilizing the torch.distributed.launch module for multi-GPU execution. It also sets options like prompt directory, text input mode, video length, and frame stride via command line.",
+    "details": [
+        {
+            "comment": "This script performs inference using a single GPU and multi-GPUs on a DynamiCrafter model. It uses the inference.py file with specific parameters to execute the process. The torch.distributed.launch module is utilized for multi-GPU execution, specifying the number of processes per node and total nodes involved.",
+            "location": "\"/media/root/Prima/works/DynamiCrafter/docs/src/scripts/run_mp.sh\":0-37",
+            "content": "name=\"dynamicrafter_256\"\nckpt='checkpoints/dynamicrafter_256_v1/model.ckpt'\nconfig='configs/inference_256_v1.0.yaml'\nprompt_dir=\"prompts/\"\nres_dir=\"results\"\n## inference using a single GPU\n# CUDA_VISIBLE_DEVICES=0 python3 scripts/evaluation/inference.py \\\n# --seed 123 \\\n# --ckpt_path $ckpt \\\n# --config $config \\\n# --savedir $res_dir/$name \\\n# --n_samples 1 \\\n# --bs 1 --height 256 --width 256 \\\n# --unconditional_guidance_scale 7.5 \\\n# --ddim_steps 50 \\\n# --ddim_eta 1.0 \\\n# --prompt_dir $prompt_dir \\\n# --text_input \\\n# --video_length 16 \\\n# --frame_stride 3\n## inference using single node with multi-GPUs:\nCUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m torch.distributed.launch \\\n--nproc_per_node=8 --nnodes=1 --master_addr=127.0.0.1 --master_port=23456 --node_rank=0 \\\nscripts/evaluation/ddp_wrapper.py \\\n--module 'inference' \\\n--seed 123 \\\n--ckpt_path $ckpt \\\n--config $config \\\n--savedir $res_dir/$name \\\n--n_samples 1 \\\n--bs 1 --height 256 --width 256 \\\n--unconditional_guidance_scale 7.5 \\\n--ddim_steps 50 \\\n--ddim_eta 1.0 \\"
+        },
+        {
+            "comment": "The code snippet specifies command-line options for the DynamiCrafter script. It sets the prompt directory, enables text input mode, sets video length to 16 frames and frame stride to 3.",
+            "location": "\"/media/root/Prima/works/DynamiCrafter/docs/src/scripts/run_mp.sh\":38-41",
+            "content": "--prompt_dir $prompt_dir \\\n--text_input \\\n--video_length 16 \\\n--frame_stride 3"
+        }
+    ]
+}
