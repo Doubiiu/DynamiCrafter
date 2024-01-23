@@ -1,0 +1,10 @@
+{
+    "summary": "This code represents the dependencies and their versions needed for various Python libraries such as decord, einops, imageio, numpy, omegaconf, opencv_python, pandas, Pillow, pytorch_lightning, PyYAML, setuptools, torch, torchvision, tqdm, transformers, moviepy, av, xformers, gradio, timm, scikit-learn, open_clip_torch, and kornia.",
+    "details": [
+        {
+            "comment": "This code represents the dependencies and their versions needed for various Python libraries such as decord, einops, imageio, numpy, omegaconf, opencv_python, pandas, Pillow, pytorch_lightning, PyYAML, setuptools, torch, torchvision, tqdm, transformers, moviepy, av, xformers, gradio, timm, scikit-learn, open_clip_torch, and kornia.",
+            "location": "\"/media/root/Prima/works/DynamiCrafter/docs/src/requirements.txt\":0-22",
+            "content": "decord==0.6.0\neinops==0.3.0\nimageio==2.9.0\nnumpy==1.24.2\nomegaconf==2.1.1\nopencv_python\npandas==2.0.0\nPillow==9.5.0\npytorch_lightning==1.8.3\nPyYAML==6.0\nsetuptools==65.6.3\ntorch==2.0.0\ntorchvision\ntqdm==4.65.0\ntransformers==4.25.1\nmoviepy\nav\nxformers\ngradio\ntimm\nscikit-learn \nopen_clip_torch==2.22.0\nkornia"
+        }
+    ]
+}
