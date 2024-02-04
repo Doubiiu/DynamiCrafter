@@ -373,14 +373,13 @@ class UNetModel(nn.Module):
             linear(time_embed_dim, time_embed_dim),
         )
         if fs_condition:
-            self.framestride_embed = nn.Sequential(
+            self.fps_embedding = nn.Sequential(
                 linear(model_channels, time_embed_dim),
                 nn.SiLU(),
                 linear(time_embed_dim, time_embed_dim),
             )
-            nn.init.zeros_(self.framestride_embed[-1].weight)
-            nn.init.zeros_(self.framestride_embed[-1].bias)
-
+            nn.init.zeros_(self.fps_embedding[-1].weight)
+            nn.init.zeros_(self.fps_embedding[-1].bias)
         ## Input Block
         self.input_blocks = nn.ModuleList(
             [
@@ -572,7 +571,8 @@ class UNetModel(nn.Module):
                 fs = torch.tensor(
                     [self.default_fs] * b, dtype=torch.long, device=x.device)
             fs_emb = timestep_embedding(fs, self.model_channels, repeat_only=False).type(x.dtype)
-            fs_embed = self.framestride_embed(fs_emb)
+
+            fs_embed = self.fps_embedding(fs_emb)
             fs_embed = fs_embed.repeat_interleave(repeats=t, dim=0)
             emb = emb + fs_embed
 

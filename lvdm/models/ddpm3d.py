@@ -20,7 +20,7 @@ import pytorch_lightning as pl
 from utils.utils import instantiate_from_config
 from lvdm.ema import LitEma
 from lvdm.distributions import DiagonalGaussianDistribution
-from lvdm.models.utils_diffusion import make_beta_schedule
+from lvdm.models.utils_diffusion import make_beta_schedule, rescale_zero_terminal_snr
 from lvdm.basics import disabled_train
 from lvdm.common import (
     extract_into_tensor,
@@ -63,6 +63,7 @@ class DDPM(pl.LightningModule):
                  use_positional_encodings=False,
                  learn_logvar=False,
                  logvar_init=0.,
+                 rescale_betas_zero_snr=False,
                  ):
         super().__init__()
         assert parameterization in ["eps", "x0", "v"], 'currently only supporting "eps" and "x0" and "v"'
@@ -81,6 +82,7 @@ class DDPM(pl.LightningModule):
         self.model = DiffusionWrapper(unet_config, conditioning_key)
         #count_params(self.model, verbose=True)
         self.use_ema = use_ema
+        self.rescale_betas_zero_snr = rescale_betas_zero_snr
         if self.use_ema:
             self.model_ema = LitEma(self.model)
             mainlogger.info(f"Keeping EMAs of {len(list(self.model_ema.buffers()))}.")
@@ -115,6 +117,9 @@ class DDPM(pl.LightningModule):
         else:
             betas = make_beta_schedule(beta_schedule, timesteps, linear_start=linear_start, linear_end=linear_end,
                                        cosine_s=cosine_s)
+        if self.rescale_betas_zero_snr:
+            betas = rescale_zero_terminal_snr(betas)
+        
         alphas = 1. - betas
         alphas_cumprod = np.cumprod(alphas, axis=0)
         alphas_cumprod_prev = np.append(1., alphas_cumprod[:-1])
@@ -135,8 +140,13 @@ class DDPM(pl.LightningModule):
         self.register_buffer('sqrt_alphas_cumprod', to_torch(np.sqrt(alphas_cumprod)))
         self.register_buffer('sqrt_one_minus_alphas_cumprod', to_torch(np.sqrt(1. - alphas_cumprod)))
         self.register_buffer('log_one_minus_alphas_cumprod', to_torch(np.log(1. - alphas_cumprod)))
-        self.register_buffer('sqrt_recip_alphas_cumprod', to_torch(np.sqrt(1. / alphas_cumprod)))
-        self.register_buffer('sqrt_recipm1_alphas_cumprod', to_torch(np.sqrt(1. / alphas_cumprod - 1)))
+
+        if self.parameterization != 'v':
+            self.register_buffer('sqrt_recip_alphas_cumprod', to_torch(np.sqrt(1. / alphas_cumprod)))
+            self.register_buffer('sqrt_recipm1_alphas_cumprod', to_torch(np.sqrt(1. / alphas_cumprod - 1)))
+        else:
+            self.register_buffer('sqrt_recip_alphas_cumprod', torch.zeros_like(to_torch(alphas_cumprod)))
+            self.register_buffer('sqrt_recipm1_alphas_cumprod', torch.zeros_like(to_torch(alphas_cumprod)))
 
         # calculations for posterior q(x_{t-1} | x_t, x_0)
         posterior_variance = (1 - self.v_posterior) * betas * (1. - alphas_cumprod_prev) / (
@@ -365,6 +375,8 @@ class LatentDiffusion(DDPM):
                  base_scale=0.7,
                  turning_step=400,
                  loop_video=False,
+                 fps_condition_type='fs',
+                 perframe_ae=False,
                  *args, **kwargs):
         self.num_timesteps_cond = default(num_timesteps_cond, 1)
         self.scale_by_std = scale_by_std
@@ -380,6 +392,8 @@ class LatentDiffusion(DDPM):
         self.noise_strength = noise_strength
         self.use_dynamic_rescale = use_dynamic_rescale
         self.loop_video = loop_video
+        self.fps_condition_type = fps_condition_type
+        self.perframe_ae = perframe_ae
         try:
             self.num_downs = len(first_stage_config.params.ddconfig.ch_mult) - 1
         except:
@@ -470,9 +484,18 @@ class LatentDiffusion(DDPM):
         else:
             reshape_back = False
         
-        encoder_posterior = self.first_stage_model.encode(x)
-        results = self.get_first_stage_encoding(encoder_posterior).detach()
-        
+        ## consume more GPU memory but faster
+        if not self.perframe_ae:
+            encoder_posterior = self.first_stage_model.encode(x)
+            results = self.get_first_stage_encoding(encoder_posterior).detach()
+        else:  ## consume less GPU memory but slower
+            results = []
+            for index in range(x.shape[0]):
+                frame_batch = self.first_stage_model.encode(x[index:index+1,:,:,:])
+                frame_result = self.get_first_stage_encoding(frame_batch).detach()
+                results.append(frame_result)
+            results = torch.cat(results, dim=0)
+
         if reshape_back:
             results = rearrange(results, '(b t) c h w -> b c t h w', b=b,t=t)
         
@@ -486,10 +509,17 @@ class LatentDiffusion(DDPM):
         else:
             reshape_back = False
             
-        z = 1. / self.scale_factor * z
+        if not self.perframe_ae:    
+            z = 1. / self.scale_factor * z
+            results = self.first_stage_model.decode(z, **kwargs)
+        else:
+            results = []
+            for index in range(z.shape[0]):
+                frame_z = 1. / self.scale_factor * z[index:index+1,:,:,:]
+                frame_result = self.first_stage_model.decode(frame_z, **kwargs)
+                results.append(frame_result)
+            results = torch.cat(results, dim=0)
 
-        results = self.first_stage_model.decode(z, **kwargs)
-            
         if reshape_back:
             results = rearrange(results, '(b t) c h w -> b c t h w', b=b,t=t)
         return results

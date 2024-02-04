@@ -28,7 +28,20 @@ def load_model_checkpoint(model, ckpt):
     state_dict = torch.load(ckpt, map_location="cpu")
     if "state_dict" in list(state_dict.keys()):
         state_dict = state_dict["state_dict"]
-        model.load_state_dict(state_dict, strict=True)
+        try:
+            model.load_state_dict(state_dict, strict=True)
+        except:
+            ## rename the keys for 256x256 model
+            new_pl_sd = OrderedDict()
+            for k,v in state_dict.items():
+                new_pl_sd[k] = v
+
+            for k in list(new_pl_sd.keys()):
+                if "framestride_embed" in k:
+                    new_key = k.replace("framestride_embed", "fps_embedding")
+                    new_pl_sd[new_key] = new_pl_sd[k]
+                    del new_pl_sd[k]
+            model.load_state_dict(new_pl_sd, strict=True)
     else:
         # deepspeed
         new_pl_sd = OrderedDict()
@@ -140,7 +153,7 @@ def get_latent_z(model, videos):
 
 
 def image_guided_synthesis(model, prompts, videos, noise_shape, n_samples=1, ddim_steps=50, ddim_eta=1., \
-                        unconditional_guidance_scale=1.0, cfg_img=None, fs=None, text_input=False, multiple_cond_cfg=False, loop=False, gfi=False, **kwargs):
+                        unconditional_guidance_scale=1.0, cfg_img=None, fs=None, text_input=False, multiple_cond_cfg=False, loop=False, gfi=False, timestep_spacing='uniform', guidance_rescale=0.0, **kwargs):
     ddim_sampler = DDIMSampler(model) if not multiple_cond_cfg else DDIMSampler_multicond(model)
     batch_size = noise_shape[0]
     fs = torch.tensor([fs] * batch_size, dtype=torch.long, device=model.device)
@@ -213,6 +226,8 @@ def image_guided_synthesis(model, prompts, videos, noise_shape, n_samples=1, ddi
                                             mask=cond_mask,
                                             x0=cond_z0,
                                             fs=fs,
+                                            timestep_spacing=timestep_spacing,
+                                            guidance_rescale=guidance_rescale,
                                             **kwargs
                                             )
 
@@ -233,7 +248,7 @@ def run_inference(args, gpu_num, gpu_no):
     model_config['params']['unet_config']['params']['use_checkpoint'] = False
     model = instantiate_from_config(model_config)
     model = model.cuda(gpu_no)
-
+    model.perframe_ae = args.perframe_ae
     assert os.path.exists(args.ckpt_path), "Error: checkpoint Not Found!"
     model = load_model_checkpoint(model, args.ckpt_path)
     model.eval()
@@ -278,7 +293,7 @@ def run_inference(args, gpu_num, gpu_no):
                 videos = videos.unsqueeze(0).to("cuda")
 
             batch_samples = image_guided_synthesis(model, prompts, videos, noise_shape, args.n_samples, args.ddim_steps, args.ddim_eta, \
-                                args.unconditional_guidance_scale, args.cfg_img, args.frame_stride, args.text_input, args.multiple_cond_cfg, args.loop, args.gfi)
+                                args.unconditional_guidance_scale, args.cfg_img, args.frame_stride, args.text_input, args.multiple_cond_cfg, args.loop, args.gfi, args.timestep_spacing, args.guidance_rescale)
 
             ## save each example individually
             for nn, samples in enumerate(batch_samples):
@@ -303,7 +318,7 @@ def get_parser():
     parser.add_argument("--bs", type=int, default=1, help="batch size for inference, should be one")
     parser.add_argument("--height", type=int, default=512, help="image height, in pixel space")
     parser.add_argument("--width", type=int, default=512, help="image width, in pixel space")
-    parser.add_argument("--frame_stride", type=int, default=3, choices=[1, 2, 3, 4, 5, 6], help="frame stride control for results, smaller value->smaller motion magnitude and more stable, and vice versa")
+    parser.add_argument("--frame_stride", type=int, default=3, help="frame stride control for 256 model (larger->larger motion), FPS control for 512 or 1024 model (smaller->larger motion)")
     parser.add_argument("--unconditional_guidance_scale", type=float, default=1.0, help="prompt classifier-free guidance")
     parser.add_argument("--seed", type=int, default=123, help="seed for seed_everything")
     parser.add_argument("--video_length", type=int, default=16, help="inference video length")
@@ -311,6 +326,9 @@ def get_parser():
     parser.add_argument("--text_input", action='store_true', default=False, help="input text to I2V model or not")
     parser.add_argument("--multiple_cond_cfg", action='store_true', default=False, help="use multi-condition cfg or not")
     parser.add_argument("--cfg_img", type=float, default=None, help="guidance scale for image conditioning")
+    parser.add_argument("--timestep_spacing", type=str, default="uniform", help="The way the timesteps should be scaled. Refer to Table 2 of the [Common Diffusion Noise Schedules and Sample Steps are Flawed](https://huggingface.co/papers/2305.08891) for more information.")
+    parser.add_argument("--guidance_rescale", type=float, default=0.0, help="guidance rescale in [Common Diffusion Noise Schedules and Sample Steps are Flawed](https://huggingface.co/papers/2305.08891)")
+    parser.add_argument("--perframe_ae", action='store_true', default=False, help="if we use per-frame AE decoding, set it to True to save GPU memory, especially for the model of 576x1024")
 
     ## currently not support looping video and generative frame interpolation
     parser.add_argument("--loop", action='store_true', default=False, help="generate looping videos or not")
@@ -320,7 +338,7 @@ def get_parser():
 
 if __name__ == '__main__':
     now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    print("@CoVideoGen cond-Inference: %s"%now)
+    print("@DynamiCrafter cond-Inference: %s"%now)
     parser = get_parser()
     args = parser.parse_args()
     

@@ -11,13 +11,15 @@ from pytorch_lightning import seed_everything
 
 
 class Image2Video():
-    def __init__(self,result_dir='./tmp/',gpu_num=1) -> None:
+    def __init__(self,result_dir='./tmp/',gpu_num=1,resolution='256_256') -> None:
+        self.resolution = (int(resolution.split('_')[0]), int(resolution.split('_')[1])) #hw
         self.download_model()
+        
         self.result_dir = result_dir
         if not os.path.exists(self.result_dir):
             os.mkdir(self.result_dir)
-        ckpt_path='checkpoints/dynamicrafter_256_v1/model.ckpt'
-        config_file='configs/inference_256_v1.0.yaml'
+        ckpt_path='checkpoints/dynamicrafter_'+resolution.split('_')[1]+'_v1/model.ckpt'
+        config_file='configs/inference_'+resolution.split('_')[1]+'_v1.0.yaml'
         config = OmegaConf.load(config_file)
         model_config = config.pop("model", OmegaConf.create())
         model_config['params']['unet_config']['params']['use_checkpoint']=False   
@@ -35,8 +37,8 @@ class Image2Video():
     def get_image(self, image, prompt, steps=50, cfg_scale=7.5, eta=1.0, fs=3, seed=123):
         seed_everything(seed)
         transform = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(256),
+            transforms.Resize(min(self.resolution)),
+            transforms.CenterCrop(self.resolution),
             ])
         torch.cuda.empty_cache()
         print('start:', prompt, time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
@@ -49,7 +51,7 @@ class Image2Video():
         batch_size=1
         channels = model.model.diffusion_model.out_channels
         frames = model.temporal_length
-        h, w = 256 // 8, 256 // 8
+        h, w = self.resolution[0] // 8, self.resolution[1] // 8
         noise_shape = [batch_size, channels, frames, h, w]
 
         # text cond
@@ -59,7 +61,7 @@ class Image2Video():
         img_tensor = torch.from_numpy(image).permute(2, 0, 1).float().to(model.device)
         img_tensor = (img_tensor / 255. - 0.5) * 2
 
-        image_tensor_resized = transform(img_tensor) #3,256,256
+        image_tensor_resized = transform(img_tensor) #3,h,w
         videos = image_tensor_resized.unsqueeze(0) # bchw
         
         z = get_latent_z(model, videos.unsqueeze(2)) #bc,1,hw
@@ -91,12 +93,12 @@ class Image2Video():
     def download_model(self):
         REPO_ID = 'Doubiiu/DynamiCrafter'
         filename_list = ['model.ckpt']
-        if not os.path.exists('./checkpoints/dynamicrafter_256_v1/'):
-            os.makedirs('./dynamicrafter_256_v1/')
+        if not os.path.exists('./checkpoints/dynamicrafter_'+str(self.resolution[1])+'_v1/'):
+            os.makedirs('./dynamicrafter_'+str(self.resolution[1])+'_v1/')
         for filename in filename_list:
-            local_file = os.path.join('./checkpoints/dynamicrafter_256_v1/', filename)
+            local_file = os.path.join('./checkpoints/dynamicrafter_'+str(self.resolution[1])+'_v1/', filename)
             if not os.path.exists(local_file):
-                hf_hub_download(repo_id=REPO_ID, filename=filename, local_dir='./checkpoints/dynamicrafter_256_v1/', local_dir_use_symlinks=False)
+                hf_hub_download(repo_id=REPO_ID, filename=filename, local_dir='./checkpoints/dynamicrafter_'+str(self.resolution[1])+'_v1/', local_dir_use_symlinks=False)
     
 if __name__ == '__main__':
     i2v = Image2Video()

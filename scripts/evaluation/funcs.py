@@ -18,6 +18,12 @@ def batch_ddim_sampling(model, cond, noise_shape, n_samples=1, ddim_steps=50, dd
     batch_size = noise_shape[0]
     fs = cond["fs"]
     del cond["fs"]
+    if noise_shape[-1] == 32:
+        timestep_spacing = "uniform"
+        guidance_rescale = 0.0
+    else:
+        timestep_spacing = "uniform_trailing"
+        guidance_rescale = 0.7
     ## construct unconditional guidance
     if cfg_scale != 1.0:
         if uncond_type == "empty_seq":
@@ -62,6 +68,8 @@ def batch_ddim_sampling(model, cond, noise_shape, n_samples=1, ddim_steps=50, dd
                                             conditional_guidance_scale_temporal=temporal_cfg_scale,
                                             x_T=x_T,
                                             fs=fs,
+                                            timestep_spacing=timestep_spacing,
+                                            guidance_rescale=guidance_rescale,
                                             **kwargs
                                             )
         ## reconstruct from latent to pixel space
@@ -92,16 +100,29 @@ def get_dirlist(path):
 def load_model_checkpoint(model, ckpt):
     def load_checkpoint(model, ckpt, full_strict):
         state_dict = torch.load(ckpt, map_location="cpu")
-        try:
+        if "state_dict" in list(state_dict.keys()):
+            state_dict = state_dict["state_dict"]
+            try:
+                model.load_state_dict(state_dict, strict=full_strict)
+            except:
+                ## rename the keys for 256x256 model
+                new_pl_sd = OrderedDict()
+                for k,v in state_dict.items():
+                    new_pl_sd[k] = v
+
+                for k in list(new_pl_sd.keys()):
+                    if "framestride_embed" in k:
+                        new_key = k.replace("framestride_embed", "fps_embedding")
+                        new_pl_sd[new_key] = new_pl_sd[k]
+                        del new_pl_sd[k]
+                model.load_state_dict(new_pl_sd, strict=full_strict)
+        else:
             ## deepspeed
             new_pl_sd = OrderedDict()
             for key in state_dict['module'].keys():
                 new_pl_sd[key[16:]]=state_dict['module'][key]
             model.load_state_dict(new_pl_sd, strict=full_strict)
-        except:
-            if "state_dict" in list(state_dict.keys()):
-                state_dict = state_dict["state_dict"]
-            model.load_state_dict(state_dict, strict=full_strict)
+
         return model
     load_checkpoint(model, ckpt, full_strict=True)
     print('>>> model checkpoint loaded.')

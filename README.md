@@ -10,7 +10,7 @@
  <a href='https://arxiv.org/abs/2310.12190'><img src='https://img.shields.io/badge/arXiv-2310.12190-b31b1b.svg'></a> &nbsp;
  <a href='https://doubiiu.github.io/projects/DynamiCrafter/'><img src='https://img.shields.io/badge/Project-Page-Green'></a> &nbsp;
 <a href='https://huggingface.co/spaces/Doubiiu/DynamiCrafter'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Demo-blue'></a> &nbsp;
-<a href='https://www.youtube.com/watch?v=PtW7hjCawbo'><img src='https://img.shields.io/badge/Youtube-Video-b31b1b.svg'></a><br>
+<a href='https://youtu.be/0NfmIsNAg-g'><img src='https://img.shields.io/badge/Youtube-Video-b31b1b.svg'></a><br>
 [![Open in OpenXLab](https://cdn-static.openxlab.org.cn/app-center/openxlab_app.svg)](https://openxlab.org.cn/apps/detail/JinboXING/DynamiCrafter)&nbsp;&nbsp;
 <a href='https://replicate.com/camenduru/dynami-crafter'><img src='https://img.shields.io/badge/replicate-Demo & Cloud API-blue'></a>&nbsp;&nbsp;
 <a href='https://github.com/camenduru/DynamiCrafter-colab'><img src='https://img.shields.io/badge/Colab-Demo-Green'></a>
@@ -25,10 +25,72 @@ From CUHK and Tencent AI Lab.
  
 ## 🔆 Introduction
 
-🚀🚀🚀 We will release a higher-resolution & watermark-free version of DynamiCrafter at the end of Jan. Stay tuned!<br>
-🤗 DynamiCrafter can animate open-domain still images based on text prompt by leveraging the pre-trained video diffusion priors. Please check our project page and paper for more information. <br>
+### 🔥🔥 New Update Rolls Out for DynamiCrafter! Better Dynamic, Higher Resolution, and More Stability! <br>
+🤗 DynamiCrafter can animate open-domain still images based on <strong>text prompt</strong> by leveraging the pre-trained video diffusion priors. Please check our project page and paper for more information. <br>
 😀 We will continue to improve the model's performance, which includes offering higher resolution, eliminating watermarks, and enhancing stability.
-### 1. Showcases
+### 1.1. Showcases (576x1024)
+<table class="center">
+  <!-- <tr>
+    <td colspan="1">"fireworks display"</td>
+    <td colspan="1">"a robot is walking through a destroyed city"</td>
+  </tr> -->
+  <tr>
+  <td>
+    <img src=assets/showcase/firework03.gif width="340">
+  </td>
+  <td>
+    <img src=assets/showcase/robot01.gif width="340">
+  </td>
+  </tr>
+
+  <!-- <tr>
+    <td colspan="1">"riding a bike under a bridge"</td>
+    <td colspan="1">""</td>
+  </tr> -->
+  <tr>
+  <td>
+    <img src=assets/showcase/bike_chineseink.gif width="340">
+  </td>
+  <td>
+    <img src=assets/showcase/girl07.gif width="340">
+  </td>
+  </tr>
+</table>
+
+
+### 1.2. Showcases (320x512)
+<table class="center">
+  <!-- <tr>
+    <td colspan="1">"fireworks display"</td>
+    <td colspan="1">"a robot is walking through a destroyed city"</td>
+  </tr> -->
+  <tr>
+  <td>
+    <img src=assets/showcase/bloom2.gif width="340">
+  </td>
+  <td>
+    <img src=assets/showcase/train_anime02.gif width="340">
+  </td>
+  </tr>
+
+  <!-- <tr>
+    <td colspan="1">"riding a bike under a bridge"</td>
+    <td colspan="1">""</td>
+  </tr> -->
+  <tr>
+  <td>
+    <img src=assets/showcase/pour_honey.gif width="340">
+  </td>
+  <td>
+    <img src=assets/showcase/lighthouse.gif width="340">
+  </td>
+  </tr>
+</table>
+
+
+
+
+### 1.3. Showcases (256x256)
 
 <table class="center">
   <tr>
@@ -51,7 +113,7 @@ From CUHK and Tencent AI Lab.
   </tr>
 
 
-  <tr>
+  <!-- <tr>
     <td colspan="2">"two people dancing"</td>
     <td colspan="2">"girl talking and blinking"</td>
   </tr>
@@ -69,10 +131,10 @@ From CUHK and Tencent AI Lab.
   <td>
     <img src=assets/showcase/girl3.gif width="170">
   </td>
-  </tr>
+  </tr> -->
 
 
-  <tr>
+  <!-- <tr>
     <td colspan="2">"zoom-in, a landscape, springtime"</td>
     <td colspan="2">"A blonde woman rides on top of a moving <br>washing machine into the sunset."</td>
   </tr>
@@ -110,7 +172,7 @@ From CUHK and Tencent AI Lab.
   <td>
     <img src=assets/showcase/bird000.gif width="170">
   </td>
-  </tr>
+  </tr> -->
 </table >
 
 ### 2. Applications
@@ -141,7 +203,7 @@ From CUHK and Tencent AI Lab.
     <img src=assets/application/36.gif width="300">
   </td>
   </tr>
-  <tr>
+  <!-- <tr>
   <td>
     <img src=assets/application/05.gif width="300">
   </td>
@@ -151,7 +213,7 @@ From CUHK and Tencent AI Lab.
   <td>
     <img src=assets/application/34.gif width="300">
   </td>
-  </tr>
+  </tr> -->
 </table >
 
 #### 2.3 Generative frame interpolation
@@ -174,7 +236,7 @@ From CUHK and Tencent AI Lab.
   </td>
   </tr>
 
-  <tr>
+  <!-- <tr>
   <td>
     <img src=assets/application/YwHJYWvv_dM_input_start.png width="250">
   </td>
@@ -196,25 +258,29 @@ From CUHK and Tencent AI Lab.
   <td>
     <img src=assets/application/ypDLB52Ykk4.gif width="250">
   </td>
-  </tr>
+  </tr> -->
 </table >
 
 
 
 ## 📝 Changelog
-- __[2023.12.02]__: 🔥🔥 Launch the local Gradio demo.
-- __[2023.11.29]__: 🔥🔥 Release the main model at a resolution of 256x256.
-- __[2023.11.27]__: 🔥🔥 Launch the project page and update the arXiv preprint.
+- __[2024.02.05]__: 🔥🔥 Release high-resolution models (320x512 & 576x1024).
+- __[2023.12.02]__: Launch the local Gradio demo.
+- __[2023.11.29]__: Release the main model at a resolution of 256x256.
+- __[2023.11.27]__: Launch the project page and update the arXiv preprint.
 <br>
 
 
 ## 🧰 Models
 
-|Model|Resolution|Checkpoint|
-|:---------|:---------|:--------|
-|DynamiCrafter256|256x256|[Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter/blob/main/model.ckpt)|
+|Model|Resolution|GPU Mem. & Inference Time (A100)|Checkpoint|
+|:---------|:---------|:--------|:--------|
+|DynamiCrafter576|576x1024|24GB & 75s (`perframe_ae=True`)|[Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter_1024/blob/main/model.ckpt)|
+|DynamiCrafter320|320x512|24GB & 20s (`perframe_ae=False`)|[Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter_512/blob/main/model.ckpt)|
+|DynamiCrafter256|256x256|20GB  & 10s (`perframe_ae=False`)|[Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter/blob/main/model.ckpt)|
 
-It takes approximately 10 seconds and requires a peak GPU memory of 20 GB to animate an image using a single NVIDIA A100 (40G) GPU.
+Currently, our DynamiCrafter can support generating videos of up to 16 frames with a resolution of 576x1024.
+<!-- It takes approximately 10 seconds and requires a peak GPU memory of 20 GB to animate an image using a single NVIDIA A100 (40G) GPU. -->
 
 ## ⚙️ Setup
 
@@ -228,22 +294,23 @@ pip install -r requirements.txt
 
 ## 💫 Inference 
 ### 1. Command line
-1) Download pretrained models via [Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter/blob/main/model.ckpt), and put the `model.ckpt` in `checkpoints/dynamicrafter_256_v1/model.ckpt`.
+1) Download pretrained models via Hugging Face, and put the `model.ckpt` with the required resolution in `checkpoints/dynamicrafter_[1024|512|256]_v1/model.ckpt`.
 2) Run the commands based on your devices and needs in terminal.
 ```bash
   # Run on a single GPU:
-  sh scripts/run.sh
+  # Select the model based on required resolutions: i.e., 1024|512|320:
+  sh scripts/run.sh 1024
   # Run on multiple GPUs for parallel inference:
-  sh scripts/run_mp.sh
+  sh scripts/run_mp.sh 1024
 ```
 
 
 
 ### 2. Local Gradio demo
 1. Download the pretrained models and put them in the corresponding directory according to the previous guidelines.
-2. Input the following commands in terminal.
+2. Input the following commands in terminal (choose a model based on the required resolution: 1024, 512 or 256).
 ```bash
-  python gradio_app.py
+  python gradio_app.py --res 1024
 ```
 
 
