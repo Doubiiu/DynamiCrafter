@@ -25,9 +25,14 @@ From CUHK and Tencent AI Lab.
  
 ## 🔆 Introduction
 
-### 🔥🔥 New Update Rolls Out for DynamiCrafter! Better Dynamic, Higher Resolution, and More Stability! <br>
+### 🔥🔥 New Update Rolls Out for DynamiCrafter! Better Dynamic, Higher Resolution, and Stronger Coherence! <br>
 🤗 DynamiCrafter can animate open-domain still images based on <strong>text prompt</strong> by leveraging the pre-trained video diffusion priors. Please check our project page and paper for more information. <br>
-😀 We will continue to improve the model's performance, which includes offering higher resolution, eliminating watermarks, and enhancing stability.
+😀 We will continue to improve the model's performance.
+
+👀 Seeking comparisons with [Stable Video Diffusion](https://stability.ai/news/stable-video-diffusion-open-ai-video-model) and [PikaLabs](https://pika.art/)? Click the image below.
+[![](https://img.youtube.com/vi/0NfmIsNAg-g/0.jpg)](https://www.youtube.com/watch?v=0NfmIsNAg-g)
+
+
 ### 1.1. Showcases (576x1024)
 <table class="center">
   <!-- <tr>
