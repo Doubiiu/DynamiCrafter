@@ -91,10 +91,10 @@ class Image2Video():
         return os.path.join(self.result_dir, f"{prompt_str}.mp4")
     
     def download_model(self):
-        REPO_ID = 'Doubiiu/DynamiCrafter'
+        REPO_ID = 'Doubiiu/DynamiCrafter_'+str(self.resolution[1]) if self.resolution[1]!=256 else 'Doubiiu/DynamiCrafter'
         filename_list = ['model.ckpt']
         if not os.path.exists('./checkpoints/dynamicrafter_'+str(self.resolution[1])+'_v1/'):
-            os.makedirs('./dynamicrafter_'+str(self.resolution[1])+'_v1/')
+            os.makedirs('./checkpoints/dynamicrafter_'+str(self.resolution[1])+'_v1/')
         for filename in filename_list:
             local_file = os.path.join('./checkpoints/dynamicrafter_'+str(self.resolution[1])+'_v1/', filename)
             if not os.path.exists(local_file):
