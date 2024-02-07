@@ -20,6 +20,7 @@ model:
     use_dynamic_rescale: true
     base_scale: 0.7
     fps_condition_type: 'fps'
+    perframe_ae: True
     unet_config:
       target: lvdm.modules.networks.openaimodel3d.UNetModel
       params:
