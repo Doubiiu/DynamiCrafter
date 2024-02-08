@@ -280,9 +280,9 @@ From CUHK and Tencent AI Lab.
 
 |Model|Resolution|GPU Mem. & Inference Time (A100)|Checkpoint|
 |:---------|:---------|:--------|:--------|
-|DynamiCrafter1024|576x1024|24GB & 75s (`perframe_ae=True`)|[Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter_1024/blob/main/model.ckpt)|
-|DynamiCrafter512|320x512|24GB & 20s (`perframe_ae=False`)|[Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter_512/blob/main/model.ckpt)|
-|DynamiCrafter256|256x256|20GB  & 10s (`perframe_ae=False`)|[Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter/blob/main/model.ckpt)|
+|DynamiCrafter1024|576x1024|18.3GB & 75s (`perframe_ae=True`)|[Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter_1024/blob/main/model.ckpt)|
+|DynamiCrafter512|320x512|12.8GB & 20s (`perframe_ae=True`)|[Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter_512/blob/main/model.ckpt)|
+|DynamiCrafter256|256x256|11.9GB  & 10s (`perframe_ae=False`)|[Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter/blob/main/model.ckpt)|
 
 Currently, our DynamiCrafter can support generating videos of up to 16 frames with a resolution of 576x1024.
 
