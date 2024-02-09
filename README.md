@@ -278,13 +278,13 @@ From CUHK and Tencent AI Lab.
 
 ## 🧰 Models
 
-|Model|Resolution|GPU Mem. & Inference Time (A100)|Checkpoint|
+|Model|Resolution|GPU Mem. & Inference Time (A100, ddim 50steps)|Checkpoint|
 |:---------|:---------|:--------|:--------|
 |DynamiCrafter1024|576x1024|18.3GB & 75s (`perframe_ae=True`)|[Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter_1024/blob/main/model.ckpt)|
 |DynamiCrafter512|320x512|12.8GB & 20s (`perframe_ae=True`)|[Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter_512/blob/main/model.ckpt)|
 |DynamiCrafter256|256x256|11.9GB  & 10s (`perframe_ae=False`)|[Hugging Face](https://huggingface.co/Doubiiu/DynamiCrafter/blob/main/model.ckpt)|
 
-Currently, our DynamiCrafter can support generating videos of up to 16 frames with a resolution of 576x1024.
+Currently, our DynamiCrafter can support generating videos of up to 16 frames with a resolution of 576x1024. The inference time can be reduced by using fewer DDIM steps.
 
 GPU memory consumed on RTX 4090 reported by @noguchis in [Twitter](https://x.com/noguchis/status/1754488826016432341?s=20): 18.3GB (576x1024), 12.8GB (320x512), 11.9GB (256x256).
 <!-- It takes approximately 10 seconds and requires a peak GPU memory of 20 GB to animate an image using a single NVIDIA A100 (40G) GPU. -->
@@ -320,6 +320,7 @@ pip install -r requirements.txt
   python gradio_app.py --res 1024
 ```
 
+Community Extensions: [ComfyUI](https://github.com/chaojie/ComfyUI-DynamiCrafter) (Thanks to [chaojie](https://github.com/chaojie)).
 
 ## 👨‍👩‍👧‍👦 Crafter Family
 [VideoCrafter1](https://github.com/AILab-CVC/VideoCrafter): Framework for high-quality video generation.
