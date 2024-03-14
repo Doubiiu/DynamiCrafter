@@ -18,7 +18,7 @@ class Image2Video():
         self.result_dir = result_dir
         if not os.path.exists(self.result_dir):
             os.mkdir(self.result_dir)
-        ckpt_path='checkpoints/dynamicrafter_'+resolution.split('_')[1]+'_v1/model.ckpt'
+        ckpt_path='checkpoints/dynamicrafter_'+resolution.split('_')[1]+'_interp_v1/model.ckpt'
         config_file='configs/inference_'+resolution.split('_')[1]+'_v1.0.yaml'
         config = OmegaConf.load(config_file)
         model_config = config.pop("model", OmegaConf.create())
@@ -34,7 +34,7 @@ class Image2Video():
         self.model_list = model_list
         self.save_fps = 8
 
-    def get_image(self, image, prompt, steps=50, cfg_scale=7.5, eta=1.0, fs=3, seed=123):
+    def get_image(self, image, prompt, steps=50, cfg_scale=7.5, eta=1.0, fs=3, seed=123, image2=None):
         seed_everything(seed)
         transform = transforms.Compose([
             transforms.Resize(min(self.resolution)),
@@ -67,7 +67,27 @@ class Image2Video():
             
             z = get_latent_z(model, videos.unsqueeze(2)) #bc,1,hw
             
+
+            if image2 is not None:
+                img_tensor2 = torch.from_numpy(image2).permute(2, 0, 1).float().to(model.device)
+                img_tensor2 = (img_tensor2 / 255. - 0.5) * 2
+
+                image_tensor_resized2 = transform(img_tensor2) #3,h,w
+                videos2 = image_tensor_resized2.unsqueeze(0) # bchw
+                
+                z2 = get_latent_z(model, videos2.unsqueeze(2)) #bc,1,hw
+
             img_tensor_repeat = repeat(z, 'b c t h w -> b c (repeat t) h w', repeat=frames)
+
+            img_tensor_repeat = torch.zeros_like(img_tensor_repeat)
+
+            ## old
+            img_tensor_repeat[:,:,:1,:,:] = z
+            if image2 is not None:
+                img_tensor_repeat[:,:,-1:,:,:] = z2
+            else:
+                img_tensor_repeat[:,:,-1:,:,:] = z
+
 
             cond_images = model.embedder(img_tensor.unsqueeze(0)) ## blc
             img_emb = model.image_proj_model(cond_images)
@@ -79,6 +99,10 @@ class Image2Video():
             
             ## inference
             batch_samples = batch_ddim_sampling(model, cond, noise_shape, n_samples=1, ddim_steps=steps, ddim_eta=eta, cfg_scale=cfg_scale)
+
+            ## remove the last frame
+            if image2 is None:
+                batch_samples = batch_samples[:,:,:,:-1,...]
             ## b,samples,c,t,h,w
             prompt_str = prompt.replace("/", "_slash_") if "/" in prompt else prompt
             prompt_str = prompt_str.replace(" ", "_") if " " in prompt else prompt_str
@@ -92,14 +116,14 @@ class Image2Video():
         return os.path.join(self.result_dir, f"{prompt_str}.mp4")
     
     def download_model(self):
-        REPO_ID = 'Doubiiu/DynamiCrafter_'+str(self.resolution[1]) if self.resolution[1]!=256 else 'Doubiiu/DynamiCrafter'
+        REPO_ID = 'Doubiiu/DynamiCrafter_'+str(self.resolution[1])+'_Interp'
         filename_list = ['model.ckpt']
-        if not os.path.exists('./checkpoints/dynamicrafter_'+str(self.resolution[1])+'_v1/'):
-            os.makedirs('./checkpoints/dynamicrafter_'+str(self.resolution[1])+'_v1/')
+        if not os.path.exists('./checkpoints/dynamicrafter_'+str(self.resolution[1])+'_interp_v1/'):
+            os.makedirs('./checkpoints/dynamicrafter_'+str(self.resolution[1])+'_interp_v1/')
         for filename in filename_list:
-            local_file = os.path.join('./checkpoints/dynamicrafter_'+str(self.resolution[1])+'_v1/', filename)
+            local_file = os.path.join('./checkpoints/dynamicrafter_'+str(self.resolution[1])+'_interp_v1/', filename)
             if not os.path.exists(local_file):
-                hf_hub_download(repo_id=REPO_ID, filename=filename, local_dir='./checkpoints/dynamicrafter_'+str(self.resolution[1])+'_v1/', local_dir_use_symlinks=False)
+                hf_hub_download(repo_id=REPO_ID, filename=filename, local_dir='./checkpoints/dynamicrafter_'+str(self.resolution[1])+'_interp_v1/', local_dir_use_symlinks=False)
     
 if __name__ == '__main__':
     i2v = Image2Video()

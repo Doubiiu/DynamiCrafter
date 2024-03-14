@@ -61,7 +61,7 @@ def load_prompts(prompt_file):
         f.close()
     return prompt_list
 
-def load_data_prompts(data_dir, video_size=(256,256), video_frames=16, gfi=False):
+def load_data_prompts(data_dir, video_size=(256,256), video_frames=16, interp=False):
     transform = transforms.Compose([
         transforms.Resize(min(video_size)),
         transforms.CenterCrop(video_size),
@@ -85,12 +85,22 @@ def load_data_prompts(data_dir, video_size=(256,256), video_frames=16, gfi=False
     prompt_list = load_prompts(prompt_file[default_idx])
     n_samples = len(prompt_list)
     for idx in range(n_samples):
-        image = Image.open(file_list[idx]).convert('RGB')
-        image_tensor = transform(image).unsqueeze(1) # [c,1,h,w]
-        frame_tensor = repeat(image_tensor, 'c t h w -> c (repeat t) h w', repeat=video_frames)
+        if interp:
+            image1 = Image.open(file_list[2*idx]).convert('RGB')
+            image_tensor1 = transform(image1).unsqueeze(1) # [c,1,h,w]
+            image2 = Image.open(file_list[2*idx+1]).convert('RGB')
+            image_tensor2 = transform(image2).unsqueeze(1) # [c,1,h,w]
+            frame_tensor1 = repeat(image_tensor1, 'c t h w -> c (repeat t) h w', repeat=video_frames//2)
+            frame_tensor2 = repeat(image_tensor2, 'c t h w -> c (repeat t) h w', repeat=video_frames//2)
+            frame_tensor = torch.cat([frame_tensor1, frame_tensor2], dim=1)
+            _, filename = os.path.split(file_list[idx*2])
+        else:
+            image = Image.open(file_list[idx]).convert('RGB')
+            image_tensor = transform(image).unsqueeze(1) # [c,1,h,w]
+            frame_tensor = repeat(image_tensor, 'c t h w -> c (repeat t) h w', repeat=video_frames)
+            _, filename = os.path.split(file_list[idx])
 
         data_list.append(frame_tensor)
-        _, filename = os.path.split(file_list[idx])
         filename_list.append(filename)
         
     return filename_list, data_list, prompt_list
@@ -153,7 +163,7 @@ def get_latent_z(model, videos):
 
 
 def image_guided_synthesis(model, prompts, videos, noise_shape, n_samples=1, ddim_steps=50, ddim_eta=1., \
-                        unconditional_guidance_scale=1.0, cfg_img=None, fs=None, text_input=False, multiple_cond_cfg=False, loop=False, gfi=False, timestep_spacing='uniform', guidance_rescale=0.0, **kwargs):
+                        unconditional_guidance_scale=1.0, cfg_img=None, fs=None, text_input=False, multiple_cond_cfg=False, loop=False, interp=False, timestep_spacing='uniform', guidance_rescale=0.0, **kwargs):
     ddim_sampler = DDIMSampler(model) if not multiple_cond_cfg else DDIMSampler_multicond(model)
     batch_size = noise_shape[0]
     fs = torch.tensor([fs] * batch_size, dtype=torch.long, device=model.device)
@@ -169,7 +179,7 @@ def image_guided_synthesis(model, prompts, videos, noise_shape, n_samples=1, ddi
     cond = {"c_crossattn": [torch.cat([cond_emb,img_emb], dim=1)]}
     if model.model.conditioning_key == 'hybrid':
         z = get_latent_z(model, videos) # b c t h w
-        if loop or gfi:
+        if loop or interp:
             img_cat_cond = torch.zeros_like(z)
             img_cat_cond[:,:,0,:,:] = z[:,:,0,:,:]
             img_cat_cond[:,:,-1,:,:] = z[:,:,-1,:,:]
@@ -271,7 +281,7 @@ def run_inference(args, gpu_num, gpu_no):
 
     ## prompt file setting
     assert os.path.exists(args.prompt_dir), "Error: prompt file Not Found!"
-    filename_list, data_list, prompt_list = load_data_prompts(args.prompt_dir, video_size=(args.height, args.width), video_frames=n_frames, gfi=args.gfi)
+    filename_list, data_list, prompt_list = load_data_prompts(args.prompt_dir, video_size=(args.height, args.width), video_frames=n_frames, interp=args.interp)
     num_samples = len(prompt_list)
     samples_split = num_samples // gpu_num
     print('Prompts testing [rank:%d] %d/%d samples loaded.'%(gpu_no, samples_split, num_samples))
@@ -293,7 +303,7 @@ def run_inference(args, gpu_num, gpu_no):
                 videos = videos.unsqueeze(0).to("cuda")
 
             batch_samples = image_guided_synthesis(model, prompts, videos, noise_shape, args.n_samples, args.ddim_steps, args.ddim_eta, \
-                                args.unconditional_guidance_scale, args.cfg_img, args.frame_stride, args.text_input, args.multiple_cond_cfg, args.loop, args.gfi, args.timestep_spacing, args.guidance_rescale)
+                                args.unconditional_guidance_scale, args.cfg_img, args.frame_stride, args.text_input, args.multiple_cond_cfg, args.loop, args.interp, args.timestep_spacing, args.guidance_rescale)
 
             ## save each example individually
             for nn, samples in enumerate(batch_samples):
@@ -332,7 +342,7 @@ def get_parser():
 
     ## currently not support looping video and generative frame interpolation
     parser.add_argument("--loop", action='store_true', default=False, help="generate looping videos or not")
-    parser.add_argument("--gfi", action='store_true', default=False, help="generate generative frame interpolation (gfi) or not")
+    parser.add_argument("--interp", action='store_true', default=False, help="generate generative frame interpolation or not")
     return parser
 
 
