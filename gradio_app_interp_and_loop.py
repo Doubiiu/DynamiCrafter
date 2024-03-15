@@ -60,7 +60,7 @@ def dynamicrafter_demo(result_dir='./tmp/', res=512):
                             i2v_cfg_scale = gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='CFG Scale', value=7.5, elem_id="i2v_cfg_scale")
                         with gr.Row():
                             i2v_steps = gr.Slider(minimum=1, maximum=60, step=1, elem_id="i2v_steps", label="Sampling steps", value=50)
-                            i2v_motion = gr.Slider(minimum=5, maximum=30, step=1, elem_id="i2v_motion", label="FPS", value=5)
+                            i2v_motion = gr.Slider(minimum=5, maximum=30, step=1, elem_id="i2v_motion", label="FPS", value=10)
                         i2v_end_btn = gr.Button("Generate")
                     with gr.Column():
                         with gr.Row():
