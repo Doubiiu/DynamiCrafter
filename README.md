@@ -342,7 +342,7 @@ Download the pretrained model and put it in the corresponding directory accordin
   python gradio_app_interp_and_loop.py 
 ```
 
-Community Extensions for Image-to-Video: [ComfyUI](https://github.com/chaojie/ComfyUI-DynamiCrafter) (Thanks to [chaojie](https://github.com/chaojie)).
+Community Extensions for Image-to-Video: [ComfyUI](https://github.com/chaojie/ComfyUI-DynamiCrafter) (Thanks to [chaojie](https://github.com/chaojie)), and Generative Frame Interpolation / Looping Video: [ComfyUI](https://github.com/kijai/ComfyUI-DynamiCrafterWrapper) (Thanks to [kijai](https://twitter.com/kijaidesign)).
 
 
 ## 👨‍👩‍👧‍👦 Crafter Family
