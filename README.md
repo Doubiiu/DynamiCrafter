@@ -345,6 +345,22 @@ Download the pretrained model and put it in the corresponding directory accordin
 Community Extensions for Image-to-Video: [ComfyUI](https://github.com/chaojie/ComfyUI-DynamiCrafter) (Thanks to [chaojie](https://github.com/chaojie)), and Generative Frame Interpolation / Looping Video: [ComfyUI](https://github.com/kijai/ComfyUI-DynamiCrafterWrapper) (Thanks to [kijai](https://twitter.com/kijaidesign)).
 
 
+## 🤝 Community Support
+
+1. ComfyUI and pruned models (bf16): [ComfyUI-DynamiCrafterWrapper](https://github.com/kijai/ComfyUI-DynamiCrafterWrapper) (Thanks to [kijai](https://twitter.com/kijaidesign))
+
+
+|Model|Resolution|GPU Mem. |Checkpoint|
+|:---------|:---------|:--------|:--------|
+|DynamiCrafter1024|576x1024|10GB |[Hugging Face](https://huggingface.co/Kijai/DynamiCrafter_pruned/blob/main/dynamicrafter_1024_v1_bf16.safetensors)|
+|DynamiCrafter512_interp|320x512|8GB |[Hugging Face](https://huggingface.co/Kijai/DynamiCrafter_pruned/blob/main/dynamicrafter_512_interp_v1_bf16.safetensors)|
+
+
+2. ComfyUI: [ComfyUI-DynamiCrafter](https://github.com/chaojie/ComfyUI-DynamiCrafter) (Thanks to [chaojie](https://github.com/chaojie))
+
+3. Docker: [DynamiCrafter_docker](https://github.com/maximofn/DynamiCrafter_docker) (Thanks to [maximofn](https://github.com/maximofn))
+
+
 ## 👨‍👩‍👧‍👦 Crafter Family
 [VideoCrafter1](https://github.com/AILab-CVC/VideoCrafter): Framework for high-quality video generation.
 
