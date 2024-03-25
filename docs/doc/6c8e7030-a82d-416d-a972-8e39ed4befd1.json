@@ -1,0 +1,15 @@
+{
+    "summary": "This code sets up an environment for DDP wrapper inference, enabling distributed data parallelism and handling distributed initialization.",
+    "details": [
+        {
+            "comment": "Imports necessary libraries for distributed processing.\nDefines a function to set up distributed training process based on local rank.\nRetrieves current distributed information if available.\nTakes arguments for module name and local rank, defaults provided.\nImports specified module using importlib.",
+            "location": "\"/media/root/Prima/works/DynamiCrafter/docs/src/scripts/evaluation/ddp_wrapper.py\":0-34",
+            "content": "import datetime\nimport argparse, importlib\nfrom pytorch_lightning import seed_everything\nimport torch\nimport torch.distributed as dist\ndef setup_dist(local_rank):\n    if dist.is_initialized():\n        return\n    torch.cuda.set_device(local_rank)\n    torch.distributed.init_process_group('nccl', init_method='env://')\ndef get_dist_info():\n    if dist.is_available():\n        initialized = dist.is_initialized()\n    else:\n        initialized = False\n    if initialized:\n        rank = dist.get_rank()\n        world_size = dist.get_world_size()\n    else:\n        rank = 0\n        world_size = 1\n    return rank, world_size\nif __name__ == '__main__':\n    now = datetime.datetime.now().strftime(\"%Y-%m-%d-%H-%M-%S\")\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--module\", type=str, help=\"module name\", default=\"inference\")\n    parser.add_argument(\"--local_rank\", type=int, nargs=\"?\", help=\"for ddp\", default=0)\n    args, unknown = parser.parse_known_args()\n    inference_api = importlib.import_module(args.module, package=None)"
+        },
+        {
+            "comment": "This code sets up an inference environment for the DDP (Distributed Data Parallel) wrapper. It parses the inference arguments, initializes a random seed, sets up distributed initialization, enables CUDNN benchmarking, gets distribution information, and runs inference with distributed data parallelism.",
+            "location": "\"/media/root/Prima/works/DynamiCrafter/docs/src/scripts/evaluation/ddp_wrapper.py\":36-46",
+            "content": "    inference_parser = inference_api.get_parser()\n    inference_args, unknown = inference_parser.parse_known_args()\n    seed_everything(inference_args.seed)\n    setup_dist(args.local_rank)\n    torch.backends.cudnn.benchmark = True\n    rank, gpu_num = get_dist_info()\n    inference_args.savedir = inference_args.savedir+str('_seed')+str(inference_args.seed)\n    print(\"@CoLVDM Inference [rank%d]: %s\"%(rank, now))\n    inference_api.run_inference(inference_args, gpu_num, rank)"
+        }
+    ]
+}

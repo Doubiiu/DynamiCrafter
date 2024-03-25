@@ -1,0 +1,20 @@
+{
+    "summary": "The code provides functions for parameter counting, matching, and object instantiation from config strings. It imports libraries and defines utility functions like image resizing and process setup, using \"env://\" initialization and NCCL communication backend for distributed training.",
+    "details": [
+        {
+            "comment": "The code includes functions for counting the number of parameters in a model, checking if a parameter matches another partial name, and instantiating an object from a config string. It also imports several libraries such as numpy, cv2, torch, and torch.distributed, and defines a function to import a module and class specified by a string.",
+            "location": "\"/media/root/Prima/works/DynamiCrafter/docs/src/utils/utils.py\":0-39",
+            "content": "import importlib\nimport numpy as np\nimport cv2\nimport torch\nimport torch.distributed as dist\ndef count_params(model, verbose=False):\n    total_params = sum(p.numel() for p in model.parameters())\n    if verbose:\n        print(f\"{model.__class__.__name__} has {total_params*1.e-6:.2f} M params.\")\n    return total_params\ndef check_istarget(name, para_list):\n    \"\"\" \n    name: full name of source para\n    para_list: partial name of target para \n    \"\"\"\n    istarget=False\n    for para in para_list:\n        if para in name:\n            return True\n    return istarget\ndef instantiate_from_config(config):\n    if not \"target\" in config:\n        if config == '__is_first_stage__':\n            return None\n        elif config == \"__is_unconditional__\":\n            return None\n        raise KeyError(\"Expected key `target` to instantiate.\")\n    return get_obj_from_str(config[\"target\"])(**config.get(\"params\", dict()))\ndef get_obj_from_str(string, reload=False):\n    module, cls = string.rsplit(\".\", 1)\n    if reload:\n        module_imp = importlib.import_module(module)"
+        },
+        {
+            "comment": "This code contains several utility functions. \"load_npz_from_dir\" and \"load_npz_from_paths\" both load numpy files from directories or paths, respectively, and concatenate the data along axis 0. \"resize_numpy_image\" resizes a numpy image based on either user-specified maximum resolution or by preserving aspect ratio while keeping short edge within specified size. Lastly, \"setup_dist\" initializes distributed process group if not already initialized.",
+            "location": "\"/media/root/Prima/works/DynamiCrafter/docs/src/utils/utils.py\":40-73",
+            "content": "        importlib.reload(module_imp)\n    return getattr(importlib.import_module(module, package=None), cls)\ndef load_npz_from_dir(data_dir):\n    data = [np.load(os.path.join(data_dir, data_name))['arr_0'] for data_name in os.listdir(data_dir)]\n    data = np.concatenate(data, axis=0)\n    return data\ndef load_npz_from_paths(data_paths):\n    data = [np.load(data_path)['arr_0'] for data_path in data_paths]\n    data = np.concatenate(data, axis=0)\n    return data   \ndef resize_numpy_image(image, max_resolution=512 * 512, resize_short_edge=None):\n    h, w = image.shape[:2]\n    if resize_short_edge is not None:\n        k = resize_short_edge / min(h, w)\n    else:\n        k = max_resolution / (h * w)\n        k = k**0.5\n    h = int(np.round(h * k / 64)) * 64\n    w = int(np.round(w * k / 64)) * 64\n    image = cv2.resize(image, (w, h), interpolation=cv2.INTER_LANCZOS4)\n    return image\ndef setup_dist(args):\n    if dist.is_initialized():\n        return\n    torch.cuda.set_device(args.local_rank)\n    torch.distributed.init_process_group("
+        },
+        {
+            "comment": "This code sets the initialization method to \"env://\" and uses NCCL as the communication backend for distributed training.",
+            "location": "\"/media/root/Prima/works/DynamiCrafter/docs/src/utils/utils.py\":74-76",
+            "content": "        'nccl',\n        init_method='env://'\n    )"
+        }
+    ]
+}
