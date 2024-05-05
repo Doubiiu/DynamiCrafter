@@ -26,11 +26,13 @@ From CUHK and Tencent AI Lab.
 </div>
  
 ## 🔆 Introduction
-🔥🔥 Generative frame interpolation / looping video generation model weights (320x512) have been released!
+🔥🔥 Training / Fine-tuning code is available NOW!!!
 
+🔥 We 1024x576 version ranks 1st on the I2V benchmark list from [VBench](https://huggingface.co/spaces/Vchitect/VBench_Leaderboard)!<br>
+🔥 Generative frame interpolation / looping video generation model weights (320x512) have been released!<br>
 🔥 New Update Rolls Out for DynamiCrafter! Better Dynamic, Higher Resolution, and Stronger Coherence! <br>
 🤗 DynamiCrafter can animate open-domain still images based on <strong>text prompt</strong> by leveraging the pre-trained video diffusion priors. Please check our project page and paper for more information. <br>
-😀 We will continue to improve the model's performance.
+
 
 👀 Seeking comparisons with [Stable Video Diffusion](https://stability.ai/news/stable-video-diffusion-open-ai-video-model) and [PikaLabs](https://pika.art/)? Click the image below.
 [![](https://img.youtube.com/vi/0NfmIsNAg-g/0.jpg)](https://www.youtube.com/watch?v=0NfmIsNAg-g)
@@ -274,7 +276,8 @@ From CUHK and Tencent AI Lab.
 
 
 ## 📝 Changelog
-- __[2024.03.14]__: 🔥🔥 Release generative frame interpolation and looping video models (320x512).
+- __[2024.05.05]__: 🔥🔥 Release training code.
+- __[2024.03.14]__: Release generative frame interpolation and looping video models (320x512).
 - __[2024.02.05]__: Release high-resolution models (320x512 & 576x1024).
 - __[2023.12.02]__: Launch the local Gradio demo.
 - __[2023.11.29]__: Release the main model at a resolution of 256x256.
@@ -342,8 +345,19 @@ Download the pretrained model and put it in the corresponding directory accordin
   python gradio_app_interp_and_loop.py 
 ```
 
-Community Extensions for Image-to-Video: [ComfyUI](https://github.com/chaojie/ComfyUI-DynamiCrafter) (Thanks to [chaojie](https://github.com/chaojie)), and Generative Frame Interpolation / Looping Video: [ComfyUI](https://github.com/kijai/ComfyUI-DynamiCrafterWrapper) (Thanks to [kijai](https://twitter.com/kijaidesign)).
+## 💥 Training / Fine-tuning
+### Image-to-Video Generation
+0. Download the WebVid Dataset, and important items in `.csv` are `page_dir`, `videoid`, and `name`.
+1. Download the pretrained models and put them in the corresponding directory according to the previous guidelines.
+2. Change `<YOUR_SAVE_ROOT_DIR>` path in `training_[1024|512]_v1.0/run.sh`
+3. Carefully check all paths in `training_[1024|512]_v1.0/config.yaml`, including `model:pretrained_checkpoint`, `data:data_dir`, and `data:meta_path`.
+4. Input the following commands in terminal (choose a model based on the required resolution: 1024 or 512).
 
+We adopt `DDPShardedStrategy` by default for training, please make sure it is available in your pytorch_lightning.
+```bash
+  sh configs/training_1024_v1.0/run.sh ## fine-tune DynamiCrafter1024
+```
+5. All the checkpoints/tensorboard record/loginfo will be saved in `<YOUR_SAVE_ROOT_DIR>`.
 
 ## 🤝 Community Support
 
@@ -386,7 +400,7 @@ Community Extensions for Image-to-Video: [ComfyUI](https://github.com/chaojie/Co
 ```
 
 ## 🙏 Acknowledgements
-We would like to thank [AK(@_akhaliq)](https://twitter.com/_akhaliq?lang=en) for the help of setting up hugging face online demo, and [camenduru](https://twitter.com/camenduru) for providing the replicate & colab online demo.
+We would like to thank [AK(@_akhaliq)](https://twitter.com/_akhaliq?lang=en) for the help of setting up hugging face online demo, and [camenduru](https://twitter.com/camenduru) for providing the replicate & colab online demo, and [Xinliang](https://github.com/dailingx) for his support and contribution to the open source project.
 
 ## 📢 Disclaimer
 This project strives to impact the domain of AI-driven video generation positively. Users are granted the freedom to create videos using this tool, but they are expected to comply with local laws and utilize it responsibly. The developers do not assume any responsibility for potential misuse by users.

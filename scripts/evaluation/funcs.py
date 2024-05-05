@@ -144,7 +144,7 @@ def load_video_batch(filepath_list, frame_stride, video_size=(256,256), video_fr
     '''
     Notice about some special cases:
     1. video_frames=-1 means to take all the frames (with fs=1)
-    2. when the total video frames is less than required, padding strategy will be used (repreated last frame)
+    2. when the total video frames is less than required, padding strategy will be used (repeated last frame)
     '''
     fps_list = []
     batch_tensor = []

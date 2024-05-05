@@ -6,7 +6,7 @@ omegaconf==2.1.1
 opencv_python
 pandas==2.0.0
 Pillow==9.5.0
-pytorch_lightning==1.8.3
+pytorch_lightning==1.9.3
 PyYAML==6.0
 setuptools==65.6.3
 torch==2.0.0
