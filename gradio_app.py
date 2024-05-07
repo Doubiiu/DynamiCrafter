@@ -78,6 +78,8 @@ def dynamicrafter_demo(result_dir='./tmp/', res=1024):
                             with gr.Row():
                                 i2v_steps = gr.Slider(minimum=1, maximum=60, step=1, elem_id="i2v_steps", label="Sampling steps", value=50)
                                 i2v_motion = gr.Slider(minimum=5, maximum=20, step=1, elem_id="i2v_motion", label="FPS", value=10)
+                                i2v_width = gr.Slider(minimum=8, maximum=1024, step=8, elem_id="i2v_width", label="Width", value=1024)
+                                i2v_height = gr.Slider(minimum=8, maximum=576, step=8, elem_id="i2v_height", label="Height", value=576)
                             with gr.Row():
                                 i2v_seed = gr.Slider(label='Random Seed', minimum=0, maximum=max_seed, step=1, value=123)
                                 random_button = gr.Button('\U0001f3b2\ufe0f', elem_id="random_button")
@@ -92,12 +94,12 @@ def dynamicrafter_demo(result_dir='./tmp/', res=1024):
                             i2v_output_video = gr.Video(label="Generated Video",elem_id="output_vid",autoplay=True,show_share_button=True)
 
                     gr.Examples(examples=i2v_examples_1024,
-                                inputs=[i2v_input_image, i2v_input_text, i2v_steps, i2v_cfg_scale, i2v_eta, i2v_motion, i2v_seed],
+                                inputs=[i2v_input_image, i2v_input_text, i2v_steps, i2v_cfg_scale, i2v_eta, i2v_motion, i2v_seed, i2v_width, i2v_height],
                                 outputs=[i2v_output_video],
                                 fn = image2video.get_image,
                                 cache_examples=False,
                     )
-                i2v_end_btn.click(inputs=[i2v_input_image, i2v_input_text, i2v_steps, i2v_cfg_scale, i2v_eta, i2v_motion, i2v_seed],
+                i2v_end_btn.click(inputs=[i2v_input_image, i2v_input_text, i2v_steps, i2v_cfg_scale, i2v_eta, i2v_motion, i2v_seed, i2v_width, i2v_height],
                                 outputs=[i2v_output_video],
                                 fn = image2video.get_image
                 )
@@ -116,6 +118,8 @@ def dynamicrafter_demo(result_dir='./tmp/', res=1024):
                             with gr.Row():
                                 i2v_steps = gr.Slider(minimum=1, maximum=60, step=1, elem_id="i2v_steps", label="Sampling steps", value=50)
                                 i2v_motion = gr.Slider(minimum=15, maximum=30, step=1, elem_id="i2v_motion", label="FPS", value=24)
+                                i2v_width = gr.Slider(minimum=8, maximum=512, step=8, elem_id="i2v_width", label="Width", value=512)
+                                i2v_height = gr.Slider(minimum=8, maximum=320, step=8, elem_id="i2v_height", label="Height", value=320)
                             with gr.Row():
                                 i2v_seed = gr.Slider(label='Random Seed', minimum=0, maximum=max_seed, step=1, value=123)
                                 random_button = gr.Button('\U0001f3b2\ufe0f', elem_id="random_button")
@@ -130,12 +134,12 @@ def dynamicrafter_demo(result_dir='./tmp/', res=1024):
                             i2v_output_video = gr.Video(label="Generated Video",elem_id="output_vid",autoplay=True,show_share_button=True)
 
                     gr.Examples(examples=i2v_examples_512,
-                                inputs=[i2v_input_image, i2v_input_text, i2v_steps, i2v_cfg_scale, i2v_eta, i2v_motion, i2v_seed],
+                                inputs=[i2v_input_image, i2v_input_text, i2v_steps, i2v_cfg_scale, i2v_eta, i2v_motion, i2v_seed, i2v_width, i2v_height],
                                 outputs=[i2v_output_video],
                                 fn = image2video.get_image,
                                 cache_examples=False,
                     )
-                i2v_end_btn.click(inputs=[i2v_input_image, i2v_input_text, i2v_steps, i2v_cfg_scale, i2v_eta, i2v_motion, i2v_seed],
+                i2v_end_btn.click(inputs=[i2v_input_image, i2v_input_text, i2v_steps, i2v_cfg_scale, i2v_eta, i2v_motion, i2v_seed, i2v_width, i2v_height],
                                 outputs=[i2v_output_video],
                                 fn = image2video.get_image
                 )
@@ -154,6 +158,8 @@ def dynamicrafter_demo(result_dir='./tmp/', res=1024):
                             with gr.Row():
                                 i2v_steps = gr.Slider(minimum=1, maximum=60, step=1, elem_id="i2v_steps", label="Sampling steps", value=50)
                                 i2v_motion = gr.Slider(minimum=1, maximum=4, step=1, elem_id="i2v_motion", label="Motion magnitude", value=3)
+                                i2v_width = gr.Slider(minimum=8, maximum=256, step=8, elem_id="i2v_width", label="Width", value=256)
+                                i2v_height = gr.Slider(minimum=8, maximum=256, step=8, elem_id="i2v_height", label="Height", value=256)
                             with gr.Row():
                                 i2v_seed = gr.Slider(label='Random Seed', minimum=0, maximum=max_seed, step=1, value=123)
                                 random_button = gr.Button('\U0001f3b2\ufe0f', elem_id="random_button")
@@ -168,12 +174,12 @@ def dynamicrafter_demo(result_dir='./tmp/', res=1024):
                             i2v_output_video = gr.Video(label="Generated Video",elem_id="output_vid",autoplay=True,show_share_button=True)
 
                     gr.Examples(examples=i2v_examples_256,
-                                inputs=[i2v_input_image, i2v_input_text, i2v_steps, i2v_cfg_scale, i2v_eta, i2v_motion, i2v_seed],
+                                inputs=[i2v_input_image, i2v_input_text, i2v_steps, i2v_cfg_scale, i2v_eta, i2v_motion, i2v_seed, i2v_width, i2v_height],
                                 outputs=[i2v_output_video],
                                 fn = image2video.get_image,
                                 cache_examples=False,
                     )
-                i2v_end_btn.click(inputs=[i2v_input_image, i2v_input_text, i2v_steps, i2v_cfg_scale, i2v_eta, i2v_motion, i2v_seed],
+                i2v_end_btn.click(inputs=[i2v_input_image, i2v_input_text, i2v_steps, i2v_cfg_scale, i2v_eta, i2v_motion, i2v_seed, i2v_width, i2v_height],
                                 outputs=[i2v_output_video],
                                 fn = image2video.get_image
                 )
