@@ -310,8 +310,8 @@ def run_inference(args, gpu_num, gpu_no):
                 ## samples : [n_samples,c,t,h,w]
                 prompt = prompts[nn]
                 filename = filenames[nn]
-                # save_results(prompt, samples, filename, fakedir, fps=8, loop=args.loop)
-                save_results_seperate(prompt, samples, filename, fakedir, fps=8, loop=args.loop)
+                # save_results(prompt, samples, filename, fakedir, fps=args.fps, loop=args.loop)
+                save_results_seperate(prompt, samples, filename, fakedir, fps=args.fps, loop=args.loop)
 
     print(f"Saved in {args.savedir}. Time used: {(time.time() - start):.2f} seconds")
 
@@ -339,6 +339,7 @@ def get_parser():
     parser.add_argument("--timestep_spacing", type=str, default="uniform", help="The way the timesteps should be scaled. Refer to Table 2 of the [Common Diffusion Noise Schedules and Sample Steps are Flawed](https://huggingface.co/papers/2305.08891) for more information.")
     parser.add_argument("--guidance_rescale", type=float, default=0.0, help="guidance rescale in [Common Diffusion Noise Schedules and Sample Steps are Flawed](https://huggingface.co/papers/2305.08891)")
     parser.add_argument("--perframe_ae", action='store_true', default=False, help="if we use per-frame AE decoding, set it to True to save GPU memory, especially for the model of 576x1024")
+    parser.add_argument("--fps", type=int, default=8, help="results saving fps")
 
     ## currently not support looping video and generative frame interpolation
     parser.add_argument("--loop", action='store_true', default=False, help="generate looping videos or not")
