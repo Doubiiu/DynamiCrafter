@@ -1,6 +1,7 @@
 import os, argparse
 import sys
 import gradio as gr
+import random
 from scripts.gradio.i2v_test import Image2Video
 sys.path.insert(1, os.path.join(sys.path[0], 'lvdm'))
 
@@ -31,17 +32,19 @@ i2v_examples_256 = [
     ['prompts/256/guitar0.jpeg', 'bear playing guitar happily, snowing', 50, 7.5, 1.0, 3, 122]
 ]
 
+max_seed = 2 ** 31
+
 
 def dynamicrafter_demo(result_dir='./tmp/', res=1024):
     if res == 1024:
         resolution = '576_1024'
-        css = """#input_img {max-width: 1024px !important} #output_vid {max-width: 1024px; max-height:576px}"""
+        css = """#input_img {max-width: 1024px !important} #output_vid {max-width: 1024px; max-height:576px} #random_button {max-width: 100px !important}"""
     elif res == 512:
         resolution = '320_512'
-        css = """#input_img {max-width: 512px !important} #output_vid {max-width: 512px; max-height: 320px}"""
+        css = """#input_img {max-width: 512px !important} #output_vid {max-width: 512px; max-height: 320px} #random_button {max-width: 100px !important}"""
     elif res == 256:
         resolution = '256_256'
-        css = """#input_img {max-width: 256px !important} #output_vid {max-width: 256px; max-height: 256px}"""
+        css = """#input_img {max-width: 256px !important} #output_vid {max-width: 256px; max-height: 256px} #random_button {max-width: 100px !important}"""
     else:
         raise NotImplementedError(f"Unsupported resolution: {res}")
     image2video = Image2Video(result_dir, resolution=resolution)
@@ -70,12 +73,19 @@ def dynamicrafter_demo(result_dir='./tmp/', res=1024):
                             with gr.Row():
                                 i2v_input_text = gr.Text(label='Prompts')
                             with gr.Row():
-                                i2v_seed = gr.Slider(label='Random Seed', minimum=0, maximum=10000, step=1, value=123)
                                 i2v_eta = gr.Slider(minimum=0.0, maximum=1.0, step=0.1, label='ETA', value=1.0, elem_id="i2v_eta")
                                 i2v_cfg_scale = gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='CFG Scale', value=7.5, elem_id="i2v_cfg_scale")
                             with gr.Row():
                                 i2v_steps = gr.Slider(minimum=1, maximum=60, step=1, elem_id="i2v_steps", label="Sampling steps", value=50)
                                 i2v_motion = gr.Slider(minimum=5, maximum=20, step=1, elem_id="i2v_motion", label="FPS", value=10)
+                            with gr.Row():
+                                i2v_seed = gr.Slider(label='Random Seed', minimum=0, maximum=max_seed, step=1, value=123)
+                                random_button = gr.Button('\U0001f3b2\ufe0f', elem_id="random_button")
+                            random_button.click(
+                                fn=lambda x: random.randint(0, max_seed),
+                                outputs=[i2v_seed],
+                                queue=False
+                            )
                             i2v_end_btn = gr.Button("Generate")
                         # with gr.Tab(label='Result'):
                         with gr.Row():
@@ -101,12 +111,19 @@ def dynamicrafter_demo(result_dir='./tmp/', res=1024):
                             with gr.Row():
                                 i2v_input_text = gr.Text(label='Prompts')
                             with gr.Row():
-                                i2v_seed = gr.Slider(label='Random Seed', minimum=0, maximum=10000, step=1, value=123)
                                 i2v_eta = gr.Slider(minimum=0.0, maximum=1.0, step=0.1, label='ETA', value=1.0, elem_id="i2v_eta")
                                 i2v_cfg_scale = gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='CFG Scale', value=7.5, elem_id="i2v_cfg_scale")
                             with gr.Row():
                                 i2v_steps = gr.Slider(minimum=1, maximum=60, step=1, elem_id="i2v_steps", label="Sampling steps", value=50)
                                 i2v_motion = gr.Slider(minimum=15, maximum=30, step=1, elem_id="i2v_motion", label="FPS", value=24)
+                            with gr.Row():
+                                i2v_seed = gr.Slider(label='Random Seed', minimum=0, maximum=max_seed, step=1, value=123)
+                                random_button = gr.Button('\U0001f3b2\ufe0f', elem_id="random_button")
+                            random_button.click(
+                                fn=lambda x: random.randint(0, max_seed),
+                                outputs=[i2v_seed],
+                                queue=False
+                            )
                             i2v_end_btn = gr.Button("Generate")
                         # with gr.Tab(label='Result'):
                         with gr.Row():
@@ -132,12 +149,19 @@ def dynamicrafter_demo(result_dir='./tmp/', res=1024):
                             with gr.Row():
                                 i2v_input_text = gr.Text(label='Prompts')
                             with gr.Row():
-                                i2v_seed = gr.Slider(label='Random Seed', minimum=0, maximum=10000, step=1, value=123)
                                 i2v_eta = gr.Slider(minimum=0.0, maximum=1.0, step=0.1, label='ETA', value=1.0, elem_id="i2v_eta")
                                 i2v_cfg_scale = gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='CFG Scale', value=7.5, elem_id="i2v_cfg_scale")
                             with gr.Row():
                                 i2v_steps = gr.Slider(minimum=1, maximum=60, step=1, elem_id="i2v_steps", label="Sampling steps", value=50)
                                 i2v_motion = gr.Slider(minimum=1, maximum=4, step=1, elem_id="i2v_motion", label="Motion magnitude", value=3)
+                            with gr.Row():
+                                i2v_seed = gr.Slider(label='Random Seed', minimum=0, maximum=max_seed, step=1, value=123)
+                                random_button = gr.Button('\U0001f3b2\ufe0f', elem_id="random_button")
+                            random_button.click(
+                                fn=lambda x: random.randint(0, max_seed),
+                                outputs=[i2v_seed],
+                                queue=False
+                            )
                             i2v_end_btn = gr.Button("Generate")
                         # with gr.Tab(label='Result'):
                         with gr.Row():
