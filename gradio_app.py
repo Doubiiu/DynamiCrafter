@@ -82,8 +82,8 @@ def dynamicrafter_demo(result_dir='./tmp/', res=1024):
                                 i2v_seed = gr.Slider(label='Random Seed', minimum=0, maximum=max_seed, step=1, value=123)
                                 random_button = gr.Button('\U0001f3b2\ufe0f', elem_id="random_button")
                             random_button.click(
-                                fn=lambda x: random.randint(0, max_seed),
-                                outputs=[i2v_seed],
+                                fn=lambda: random.randint(0, max_seed),
+                                outputs=i2v_seed,
                                 queue=False
                             )
                             i2v_end_btn = gr.Button("Generate")
@@ -120,8 +120,8 @@ def dynamicrafter_demo(result_dir='./tmp/', res=1024):
                                 i2v_seed = gr.Slider(label='Random Seed', minimum=0, maximum=max_seed, step=1, value=123)
                                 random_button = gr.Button('\U0001f3b2\ufe0f', elem_id="random_button")
                             random_button.click(
-                                fn=lambda x: random.randint(0, max_seed),
-                                outputs=[i2v_seed],
+                                fn=lambda: random.randint(0, max_seed),
+                                outputs=i2v_seed,
                                 queue=False
                             )
                             i2v_end_btn = gr.Button("Generate")
@@ -158,8 +158,8 @@ def dynamicrafter_demo(result_dir='./tmp/', res=1024):
                                 i2v_seed = gr.Slider(label='Random Seed', minimum=0, maximum=max_seed, step=1, value=123)
                                 random_button = gr.Button('\U0001f3b2\ufe0f', elem_id="random_button")
                             random_button.click(
-                                fn=lambda x: random.randint(0, max_seed),
-                                outputs=[i2v_seed],
+                                fn=lambda: random.randint(0, max_seed),
+                                outputs=i2v_seed,
                                 queue=False
                             )
                             i2v_end_btn = gr.Button("Generate")
