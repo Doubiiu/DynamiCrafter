@@ -277,7 +277,8 @@ From CUHK and Tencent AI Lab.
 
 
 ## 📝 Changelog
-- __[2024.05.05]__: 🔥🔥 Release training code.
+- __[2024.05.24]__: 🔥🔥 Release WebVid10M-motion annotations.
+- __[2024.05.05]__: Release training code.
 - __[2024.03.14]__: Release generative frame interpolation and looping video models (320x512).
 - __[2024.02.05]__: Release high-resolution models (320x512 & 576x1024).
 - __[2023.12.02]__: Launch the local Gradio demo.
@@ -360,6 +361,12 @@ We adopt `DDPShardedStrategy` by default for training, please make sure it is av
 ```
 5. All the checkpoints/tensorboard record/loginfo will be saved in `<YOUR_SAVE_ROOT_DIR>`.
 
+## 🎁 WebVid-10M-motion annotations (~2.6M)
+The annoations of our WebVid-10M-motion is available on [Huggingface Dataset](https://huggingface.co/datasets/Doubiiu/webvid10m_motion). In addition to the original annotations, we add three more motion-related annotations: `dynamic_confidence`, `dynamic_wording`, and `dynamic_source_category`. Please refer to our [supplementary document](https://arxiv.org/pdf/2310.12190) (Section D) for more details.
+
+
+
+
 ## 🤝 Community Support
 
 1. ComfyUI and pruned models (bf16): [ComfyUI-DynamiCrafterWrapper](https://github.com/kijai/ComfyUI-DynamiCrafterWrapper) (Thanks to [kijai](https://twitter.com/kijaidesign))
@@ -391,6 +398,7 @@ We adopt `DDPShardedStrategy` by default for training, please make sure it is av
 
 [StyleCrafter](https://gongyeliu.github.io/StyleCrafter.github.io/): Stylized-image-guided text-to-image and text-to-video generation.
 ## 😉 Citation
+Please consider citing our paper if our code and dataset annotations are useful:
 ```bib
 @article{xing2023dynamicrafter,
   title={DynamiCrafter: Animating Open-domain Images with Video Diffusion Priors},
