@@ -277,7 +277,8 @@ From CUHK and Tencent AI Lab.
 
 
 ## 📝 Changelog
-- __[2024.05.24]__: 🔥🔥 Release WebVid10M-motion annotations.
+- __[2024.06.14]__: 🔥🔥 Release training code for interpolation.
+- __[2024.05.24]__: Release WebVid10M-motion annotations.
 - __[2024.05.05]__: Release training code.
 - __[2024.03.14]__: Release generative frame interpolation and looping video models (320x512).
 - __[2024.02.05]__: Release high-resolution models (320x512 & 576x1024).
@@ -360,6 +361,13 @@ We adopt `DDPShardedStrategy` by default for training, please make sure it is av
   sh configs/training_1024_v1.0/run.sh ## fine-tune DynamiCrafter1024
 ```
 5. All the checkpoints/tensorboard record/loginfo will be saved in `<YOUR_SAVE_ROOT_DIR>`.
+
+### Generative Frame Interpolation
+Download pretrained model DynamiCrafter512_interp and put the `model.ckpt` in `checkpoints/dynamicrafter_512_interp_v1/model.ckpt`. Follow the same fine-tuning procedure in "Image-to-Video Generation", and run the script below:
+```bash
+sh configs/training_512_v1.0/run_interp.sh
+```
+
 
 ## 🎁 WebVid-10M-motion annotations (~2.6M)
 The annoations of our WebVid-10M-motion is available on [Huggingface Dataset](https://huggingface.co/datasets/Doubiiu/webvid10m_motion). In addition to the original annotations, we add three more motion-related annotations: `dynamic_confidence`, `dynamic_wording`, and `dynamic_source_category`. Please refer to our [supplementary document](https://arxiv.org/pdf/2310.12190) (Section D) for more details.
