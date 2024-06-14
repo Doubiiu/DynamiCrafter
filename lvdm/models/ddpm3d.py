@@ -481,7 +481,7 @@ class LatentDiffusion(DDPM):
                  use_dynamic_rescale=False,
                  base_scale=0.7,
                  turning_step=400,
-                 loop_video=False,
+                 interp_mode=False,
                  fps_condition_type='fs',
                  perframe_ae=False,
                  # added
@@ -502,7 +502,7 @@ class LatentDiffusion(DDPM):
         self.cond_stage_key = cond_stage_key
         self.noise_strength = noise_strength
         self.use_dynamic_rescale = use_dynamic_rescale
-        self.loop_video = loop_video
+        self.interp_mode = interp_mode
         self.fps_condition_type = fps_condition_type
         self.perframe_ae = perframe_ae
 
@@ -1093,10 +1093,16 @@ class LatentVisualDiffusion(LatentDiffusion):
         img_emb = self.image_proj_model(img_emb)
 
         if self.model.conditioning_key == 'hybrid':
-            ## simply repeat the cond_frame to match the seq_len of z
-            img_cat_cond = z[:,:,cond_frame_index,:,:]
-            img_cat_cond = img_cat_cond.unsqueeze(2)
-            img_cat_cond = repeat(img_cat_cond, 'b c t h w -> b c (repeat t) h w', repeat=z.shape[2])
+            if self.interp_mode:
+                ## starting frame + (L-2 empty frames) + ending frame
+                img_cat_cond = torch.zeros_like(z)
+                img_cat_cond[:,:,0,:,:] = z[:,:,0,:,:]
+                img_cat_cond[:,:,-1,:,:] = z[:,:,-1,:,:]
+            else:
+                ## simply repeat the cond_frame to match the seq_len of z
+                img_cat_cond = z[:,:,cond_frame_index,:,:]
+                img_cat_cond = img_cat_cond.unsqueeze(2)
+                img_cat_cond = repeat(img_cat_cond, 'b c t h w -> b c (repeat t) h w', repeat=z.shape[2])
 
             cond["c_concat"] = [img_cat_cond] # b c t h w
         cond["c_crossattn"] = [torch.cat([prompt_imb, img_emb], dim=1)] ## concat in the seq_len dim

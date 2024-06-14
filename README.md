@@ -15,7 +15,8 @@
 <a href='https://replicate.com/camenduru/dynami-crafter-576x1024'><img src='https://img.shields.io/badge/replicate-Demo-blue'></a>&nbsp;&nbsp;
 <a href='https://github.com/camenduru/DynamiCrafter-colab'><img src='https://img.shields.io/badge/Colab-Demo-Green'></a>&nbsp;
 <a href='https://huggingface.co/spaces/Doubiiu/DynamiCrafter'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face%20ImageAnimation-Demo-blue'></a>&nbsp;
-<a href='https://huggingface.co/spaces/Doubiiu/DynamiCrafter_interp_loop'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face%20Interpolation/Looping-Demo-blue'></a>
+<a href='https://huggingface.co/spaces/Doubiiu/DynamiCrafter_interp_loop'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face%20Interpolation/Looping-Demo-blue'></a>&nbsp;
+<a href='https://openbayes.com/console/public/tutorials/XMVDVpXKN5o'><img src='https://img.shields.io/badge/Demo-OpenBayes贝式计算-blue'></a>
 
 _**[Jinbo Xing](https://doubiiu.github.io/), [Menghan Xia*](https://menghanxia.github.io), [Yong Zhang](https://yzhang2016.github.io), [Haoxin Chen](), [Wangbo Yu](), <br>[Hanyuan Liu](https://github.com/hyliu), [Xintao Wang](https://xinntao.github.io/), [Tien-Tsin Wong*](https://www.cse.cuhk.edu.hk/~ttwong/myself.html), [Ying Shan](https://scholar.google.com/citations?hl=en&user=4oXBp9UAAAAJ&view_op=list_works&sortby=pubdate)**_
 <br><br>
@@ -276,7 +277,9 @@ From CUHK and Tencent AI Lab.
 
 
 ## 📝 Changelog
-- __[2024.05.05]__: 🔥🔥 Release training code.
+- __[2024.06.14]__: 🔥🔥 Release training code for interpolation.
+- __[2024.05.24]__: Release WebVid10M-motion annotations.
+- __[2024.05.05]__: Release training code.
 - __[2024.03.14]__: Release generative frame interpolation and looping video models (320x512).
 - __[2024.02.05]__: Release high-resolution models (320x512 & 576x1024).
 - __[2023.12.02]__: Launch the local Gradio demo.
@@ -359,6 +362,19 @@ We adopt `DDPShardedStrategy` by default for training, please make sure it is av
 ```
 5. All the checkpoints/tensorboard record/loginfo will be saved in `<YOUR_SAVE_ROOT_DIR>`.
 
+### Generative Frame Interpolation
+Download pretrained model DynamiCrafter512_interp and put the `model.ckpt` in `checkpoints/dynamicrafter_512_interp_v1/model.ckpt`. Follow the same fine-tuning procedure in "Image-to-Video Generation", and run the script below:
+```bash
+sh configs/training_512_v1.0/run_interp.sh
+```
+
+
+## 🎁 WebVid-10M-motion annotations (~2.6M)
+The annoations of our WebVid-10M-motion is available on [Huggingface Dataset](https://huggingface.co/datasets/Doubiiu/webvid10m_motion). In addition to the original annotations, we add three more motion-related annotations: `dynamic_confidence`, `dynamic_wording`, and `dynamic_source_category`. Please refer to our [supplementary document](https://arxiv.org/pdf/2310.12190) (Section D) for more details.
+
+
+
+
 ## 🤝 Community Support
 
 1. ComfyUI and pruned models (bf16): [ComfyUI-DynamiCrafterWrapper](https://github.com/kijai/ComfyUI-DynamiCrafterWrapper) (Thanks to [kijai](https://twitter.com/kijaidesign))
@@ -390,6 +406,7 @@ We adopt `DDPShardedStrategy` by default for training, please make sure it is av
 
 [StyleCrafter](https://gongyeliu.github.io/StyleCrafter.github.io/): Stylized-image-guided text-to-image and text-to-video generation.
 ## 😉 Citation
+Please consider citing our paper if our code and dataset annotations are useful:
 ```bib
 @article{xing2023dynamicrafter,
   title={DynamiCrafter: Animating Open-domain Images with Video Diffusion Priors},
