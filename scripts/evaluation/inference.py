@@ -14,6 +14,7 @@ sys.path.insert(1, os.path.join(sys.path[0], '..', '..'))
 from lvdm.models.samplers.ddim import DDIMSampler
 from lvdm.models.samplers.ddim_multiplecond import DDIMSampler as DDIMSampler_multicond
 from utils.utils import instantiate_from_config
+import random
 
 
 def get_filelist(data_dir, postfixes):
@@ -351,7 +352,10 @@ if __name__ == '__main__':
     print("@DynamiCrafter cond-Inference: %s"%now)
     parser = get_parser()
     args = parser.parse_args()
-    
-    seed_everything(args.seed)
+
+    seed = args.seed
+    if seed < 0:
+        seed = random.randint(0, 2 ** 31)
+    seed_everything(seed)
     rank, gpu_num = 0, 1
     run_inference(args, gpu_num, rank)
