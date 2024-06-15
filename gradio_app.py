@@ -73,7 +73,6 @@ def dynamicrafter_demo(result_dir='./tmp/', res=1024):
                             with gr.Row():
                                 i2v_input_text = gr.Text(label='Prompts')
                             with gr.Row():
-                                i2v_seed = gr.Slider(label='Random Seed', minimum=0, maximum=10000, step=1, value=123)
                                 i2v_eta = gr.Slider(minimum=0.0, maximum=1.0, step=0.1, label='ETA', value=1.0, elem_id="i2v_eta")
                                 i2v_cfg_scale = gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='CFG Scale', value=7.5, elem_id="i2v_cfg_scale")
                             with gr.Row():
@@ -112,7 +111,6 @@ def dynamicrafter_demo(result_dir='./tmp/', res=1024):
                             with gr.Row():
                                 i2v_input_text = gr.Text(label='Prompts')
                             with gr.Row():
-                                i2v_seed = gr.Slider(label='Random Seed', minimum=0, maximum=10000, step=1, value=123)
                                 i2v_eta = gr.Slider(minimum=0.0, maximum=1.0, step=0.1, label='ETA', value=1.0, elem_id="i2v_eta")
                                 i2v_cfg_scale = gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='CFG Scale', value=7.5, elem_id="i2v_cfg_scale")
                             with gr.Row():
@@ -151,7 +149,6 @@ def dynamicrafter_demo(result_dir='./tmp/', res=1024):
                             with gr.Row():
                                 i2v_input_text = gr.Text(label='Prompts')
                             with gr.Row():
-                                i2v_seed = gr.Slider(label='Random Seed', minimum=0, maximum=10000, step=1, value=123)
                                 i2v_eta = gr.Slider(minimum=0.0, maximum=1.0, step=0.1, label='ETA', value=1.0, elem_id="i2v_eta")
                                 i2v_cfg_scale = gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='CFG Scale', value=7.5, elem_id="i2v_cfg_scale")
                             with gr.Row():
