@@ -1,0 +1,5 @@
+.*
+assets
+*.{png,jpg,jpeg}
+LICENSE
+docs
