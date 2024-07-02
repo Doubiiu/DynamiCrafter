@@ -20,10 +20,9 @@
 
 _**[Jinbo Xing](https://doubiiu.github.io/), [Menghan Xia*](https://menghanxia.github.io), [Yong Zhang](https://yzhang2016.github.io), [Haoxin Chen](), [Wangbo Yu](), <br>[Hanyuan Liu](https://github.com/hyliu), [Xintao Wang](https://xinntao.github.io/), [Tien-Tsin Wong*](https://www.cse.cuhk.edu.hk/~ttwong/myself.html), [Ying Shan](https://scholar.google.com/citations?hl=en&user=4oXBp9UAAAAJ&view_op=list_works&sortby=pubdate)**_
 <br><br>
-(* corresponding authors)
+(* corresponding authors) From CUHK and Tencent AI Lab.
 
-From CUHK and Tencent AI Lab.
-
+<strong>at European Conference on Computer Vision (ECCV) 2024</strong>
 </div>
  
 ## 🔆 Introduction
