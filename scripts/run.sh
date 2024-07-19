@@ -8,13 +8,13 @@ config=configs/inference_$1_v1.0.yaml
 prompt_dir=prompts/$1/
 res_dir="results"
 
-if [ "$1" == "256" ]; then
+if [ "$1" = "256" ]; then
     H=256
     FS=3  ## This model adopts frame stride=3, range recommended: 1-6 (larger value -> larger motion)
-elif [ "$1" == "512" ]; then
+elif [ "$1" = "512" ]; then
     H=320
     FS=24 ## This model adopts FPS=24, range recommended: 15-30 (smaller value -> larger motion)
-elif [ "$1" == "1024" ]; then
+elif [ "$1" = "1024" ]; then
     H=576
     FS=10 ## This model adopts FPS=10, range recommended: 15-5 (smaller value -> larger motion)
 else
@@ -22,7 +22,7 @@ else
     exit 1
 fi
 
-if [ "$1" == "256" ]; then
+if [ "$1" = "256" ]; then
 CUDA_VISIBLE_DEVICES=0 python3 scripts/evaluation/inference.py \
 --seed ${seed} \
 --ckpt_path $ckpt \
