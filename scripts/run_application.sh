@@ -8,7 +8,7 @@ res_dir="results"
 FS=5 ## This model adopts FPS=5, range recommended: 5-30 (smaller value -> larger motion)
 
 
-if [ "$1" == "interp" ]; then
+if [ "$1" = "interp" ]; then
 seed=12306
 name=dynamicrafter_512_$1_seed${seed}
 CUDA_VISIBLE_DEVICES=0 python3 scripts/evaluation/inference.py \
