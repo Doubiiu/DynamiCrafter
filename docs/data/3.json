@@ -1,0 +1,549 @@
+{
+    "300": {
+        "file_id": 13,
+        "content": "        x = (x + 1.) / 2.\n        # renormalize according to clip\n        x = kornia.enhance.normalize(x, self.mean, self.std)\n        return x\n    def freeze(self):\n        self.model = self.model.eval()\n        for param in self.model.parameters():\n            param.requires_grad = False\n    def forward(self, image, no_dropout=False): \n        ## image: b c h w\n        z = self.encode_with_vision_transformer(image)\n        return z\n    def encode_with_vision_transformer(self, x):\n        x = self.preprocess(x)\n        # to patches - whether to use dual patchnorm - https://arxiv.org/abs/2302.01327v1\n        if self.model.visual.input_patchnorm:\n            # einops - rearrange(x, 'b c (h p1) (w p2) -> b (h w) (c p1 p2)')\n            x = x.reshape(x.shape[0], x.shape[1], self.model.visual.grid_size[0], self.model.visual.patch_size[0], self.model.visual.grid_size[1], self.model.visual.patch_size[1])\n            x = x.permute(0, 2, 4, 1, 3, 5)\n            x = x.reshape(x.shape[0], self.model.visual.grid_size[0] * self.model.visual.grid_size[1], -1)",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/condition.py:327-350"
+    },
+    "301": {
+        "file_id": 13,
+        "content": "The code defines a class with functions for encoding images using a vision transformer, freezing the model parameters, and normalizing input. It first renormalizes the input based on the clip, then encodes it using a vision transformer after preprocessing (e.g., reshaping), and optionally applies dual patchnorm if the input patchnorm of the model is set to True. The class also has methods to freeze the model parameters and forward the encoded image through the model.",
+        "type": "comment"
+    },
+    "302": {
+        "file_id": 13,
+        "content": "            x = self.model.visual.patchnorm_pre_ln(x)\n            x = self.model.visual.conv1(x)\n        else:\n            x = self.model.visual.conv1(x)  # shape = [*, width, grid, grid]\n            x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]\n            x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]\n        # class embeddings and positional embeddings\n        x = torch.cat(\n            [self.model.visual.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device),\n             x], dim=1)  # shape = [*, grid ** 2 + 1, width]\n        x = x + self.model.visual.positional_embedding.to(x.dtype)\n        # a patch_dropout of 0. would mean it is disabled and this function would do nothing but return what was passed in\n        x = self.model.visual.patch_dropout(x)\n        x = self.model.visual.ln_pre(x)\n        x = x.permute(1, 0, 2)  # NLD -> LND\n        x = self.model.visual.transformer(x)\n        x = x.permute(1, 0, 2)  # LND -> NLD",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/condition.py:351-370"
+    },
+    "303": {
+        "file_id": 13,
+        "content": "This code performs convolution and normalization on input, reshapes the tensor, and concatenates class embeddings with positional embeddings. Then it applies patch dropout and layer normalization before passing the data to a Transformer model.",
+        "type": "comment"
+    },
+    "304": {
+        "file_id": 13,
+        "content": "        return x\nclass FrozenCLIPT5Encoder(AbstractEncoder):\n    def __init__(self, clip_version=\"openai/clip-vit-large-patch14\", t5_version=\"google/t5-v1_1-xl\", device=\"cuda\",\n                 clip_max_length=77, t5_max_length=77):\n        super().__init__()\n        self.clip_encoder = FrozenCLIPEmbedder(clip_version, device, max_length=clip_max_length)\n        self.t5_encoder = FrozenT5Embedder(t5_version, device, max_length=t5_max_length)\n        print(f\"{self.clip_encoder.__class__.__name__} has {count_params(self.clip_encoder) * 1.e-6:.2f} M parameters, \"\n              f\"{self.t5_encoder.__class__.__name__} comes with {count_params(self.t5_encoder) * 1.e-6:.2f} M params.\")\n    def encode(self, text):\n        return self(text)\n    def forward(self, text):\n        clip_z = self.clip_encoder.encode(text)\n        t5_z = self.t5_encoder.encode(text)\n        return [clip_z, t5_z]",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/condition.py:372-389"
+    },
+    "305": {
+        "file_id": 13,
+        "content": "The code defines a `FrozenCLIPT5Encoder` class that inherits from the abstract base class `AbstractEncoder`. It initializes two encoders: a `FrozenCLIPEmbedder` and a `FrozenT5Embedder`, using specified versions, devices, and maximum lengths. The class overrides the default `encode` method to delegate encoding to its internal encoders, and defines a forward pass that combines encoded outputs from both encoders. The constructor also prints the number of parameters for each embedded model.",
+        "type": "comment"
+    },
+    "306": {
+        "file_id": 14,
+        "content": "/lvdm/modules/encoders/resampler.py",
+        "type": "filepath"
+    },
+    "307": {
+        "file_id": 14,
+        "content": "The code defines a resampler module with 8 layers, layer normalization, and linear transforms for the DynamiCrafter/lvdm project. It includes PerceiverAttention and FeedForward layers in its forward function to process input latents and apply projection and normalization.",
+        "type": "summary"
+    },
+    "308": {
+        "file_id": 14,
+        "content": "# modified from https://github.com/mlfoundations/open_flamingo/blob/main/open_flamingo/src/helpers.py\n# and https://github.com/lucidrains/imagen-pytorch/blob/main/imagen_pytorch/imagen_pytorch.py\n# and https://github.com/tencent-ailab/IP-Adapter/blob/main/ip_adapter/resampler.py\nimport math\nimport torch\nimport torch.nn as nn\nclass ImageProjModel(nn.Module):\n    \"\"\"Projection Model\"\"\"\n    def __init__(self, cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4):\n        super().__init__()        \n        self.cross_attention_dim = cross_attention_dim\n        self.clip_extra_context_tokens = clip_extra_context_tokens\n        self.proj = nn.Linear(clip_embeddings_dim, self.clip_extra_context_tokens * cross_attention_dim)\n        self.norm = nn.LayerNorm(cross_attention_dim)\n    def forward(self, image_embeds):\n        #embeds = image_embeds\n        embeds = image_embeds.type(list(self.proj.parameters())[0].dtype)\n        clip_extra_context_tokens = self.proj(embeds).reshape(-1, self.clip_extra_context_tokens, self.cross_attention_dim)",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/resampler.py:1-21"
+    },
+    "309": {
+        "file_id": 14,
+        "content": "This code defines an ImageProjModel class that performs projection for cross-attention. It has a linear projection layer and a layer normalization layer. The model takes image embeddings as input, reshapes them based on the number of clip_extra_context_tokens and the dimension of cross_attention_dim.",
+        "type": "comment"
+    },
+    "310": {
+        "file_id": 14,
+        "content": "        clip_extra_context_tokens = self.norm(clip_extra_context_tokens)\n        return clip_extra_context_tokens\n# FFN\ndef FeedForward(dim, mult=4):\n    inner_dim = int(dim * mult)\n    return nn.Sequential(\n        nn.LayerNorm(dim),\n        nn.Linear(dim, inner_dim, bias=False),\n        nn.GELU(),\n        nn.Linear(inner_dim, dim, bias=False),\n    )\ndef reshape_tensor(x, heads):\n    bs, length, width = x.shape\n    #(bs, length, width) --> (bs, length, n_heads, dim_per_head)\n    x = x.view(bs, length, heads, -1)\n    # (bs, length, n_heads, dim_per_head) --> (bs, n_heads, length, dim_per_head)\n    x = x.transpose(1, 2)\n    # (bs, n_heads, length, dim_per_head) --> (bs*n_heads, length, dim_per_head)\n    x = x.reshape(bs, heads, length, -1)\n    return x\nclass PerceiverAttention(nn.Module):\n    def __init__(self, *, dim, dim_head=64, heads=8):\n        super().__init__()\n        self.scale = dim_head**-0.5\n        self.dim_head = dim_head\n        self.heads = heads\n        inner_dim = dim_head * heads\n        self.norm1 = nn.LayerNorm(dim)",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/resampler.py:22-56"
+    },
+    "311": {
+        "file_id": 14,
+        "content": "The code defines a PerceiverAttention class that performs self-attention in the context of a deep learning model. It includes methods for applying a feed-forward layer (FeedForward) and reshaping tensors (reshape_tensor). The class has attributes like dimension, number of heads, and hidden dimension for attention calculations. It also initializes a LayerNorm and contains normalization steps to ensure stability and efficiency in the computations.",
+        "type": "comment"
+    },
+    "312": {
+        "file_id": 14,
+        "content": "        self.norm2 = nn.LayerNorm(dim)\n        self.to_q = nn.Linear(dim, inner_dim, bias=False)\n        self.to_kv = nn.Linear(dim, inner_dim * 2, bias=False)\n        self.to_out = nn.Linear(inner_dim, dim, bias=False)\n    def forward(self, x, latents):\n        \"\"\"\n        Args:\n            x (torch.Tensor): image features\n                shape (b, n1, D)\n            latent (torch.Tensor): latent features\n                shape (b, n2, D)\n        \"\"\"\n        x = self.norm1(x)\n        latents = self.norm2(latents)\n        b, l, _ = latents.shape\n        q = self.to_q(latents)\n        kv_input = torch.cat((x, latents), dim=-2)\n        k, v = self.to_kv(kv_input).chunk(2, dim=-1)\n        q = reshape_tensor(q, self.heads)\n        k = reshape_tensor(k, self.heads)\n        v = reshape_tensor(v, self.heads)\n        # attention\n        scale = 1 / math.sqrt(math.sqrt(self.dim_head))\n        weight = (q * scale) @ (k * scale).transpose(-2, -1) # More stable with f16 than dividing afterwards\n        weight = torch.softmax(weight.float(), dim=-1).type(weight.dtype)",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/resampler.py:57-88"
+    },
+    "313": {
+        "file_id": 14,
+        "content": "This code defines a Resampler class with layer normalization and linear transforms. The forward function takes image features (x) and latent features (latents) as inputs, applies normalization, performs attention mechanism using the input tensors, and returns the weighted output.",
+        "type": "comment"
+    },
+    "314": {
+        "file_id": 14,
+        "content": "        out = weight @ v\n        out = out.permute(0, 2, 1, 3).reshape(b, l, -1)\n        return self.to_out(out)\nclass Resampler(nn.Module):\n    def __init__(\n        self,\n        dim=1024,\n        depth=8,\n        dim_head=64,\n        heads=16,\n        num_queries=8,\n        embedding_dim=768,\n        output_dim=1024,\n        ff_mult=4,\n        video_length=None, # using frame-wise version or not\n    ):\n        super().__init__()\n        ## queries for a single frame / image\n        self.num_queries = num_queries \n        self.video_length = video_length\n        ## <num_queries> queries for each frame\n        if video_length is not None: \n            num_queries = num_queries * video_length\n        self.latents = nn.Parameter(torch.randn(1, num_queries, dim) / dim**0.5)\n        self.proj_in = nn.Linear(embedding_dim, dim)\n        self.proj_out = nn.Linear(dim, output_dim)\n        self.norm_out = nn.LayerNorm(output_dim)\n        self.layers = nn.ModuleList([])\n        for _ in range(depth):\n            self.layers.append(",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/resampler.py:89-125"
+    },
+    "315": {
+        "file_id": 14,
+        "content": "The Resampler class is a neural network module that takes in an embedding dimension of 768, outputs a dimension of 1024. It has a depth of 8 and utilizes a specified number of queries for each frame or image depending on whether video length is provided or not. It also contains linear projections (proj_in, proj_out), a layer normalization (norm_out) and a series of layers (self.layers). This Resampler class seems to be part of a larger model that processes and resamples data for various purposes.",
+        "type": "comment"
+    },
+    "316": {
+        "file_id": 14,
+        "content": "                nn.ModuleList(\n                    [\n                        PerceiverAttention(dim=dim, dim_head=dim_head, heads=heads),\n                        FeedForward(dim=dim, mult=ff_mult),\n                    ]\n                )\n            )\n    def forward(self, x):\n        latents = self.latents.repeat(x.size(0), 1, 1) ## B (T L) C\n        x = self.proj_in(x)\n        for attn, ff in self.layers:\n            latents = attn(x, latents) + latents\n            latents = ff(latents) + latents\n        latents = self.proj_out(latents)\n        latents = self.norm_out(latents) # B L C or B (T L) C\n        return latents",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/resampler.py:126-145"
+    },
+    "317": {
+        "file_id": 14,
+        "content": "This code defines a resampler module for the DynamiCrafter/lvdm project. It uses PerceiverAttention and FeedForward layers in its forward function, which repeats input latents, processes them through layers, applies projection and normalization, and returns the result.",
+        "type": "comment"
+    },
+    "318": {
+        "file_id": 15,
+        "content": "/lvdm/modules/networks/ae_modules.py",
+        "type": "filepath"
+    },
+    "319": {
+        "file_id": 15,
+        "content": "The code creates a PyTorch Autoencoder module with attention blocks, normalization layers, convolutional layers, Swish nonlinearity, and timestep embedding for image processing. It also disables gradient computation for pretrained model parameters and includes 'encode_with_pretrained' and 'forward' functions.",
+        "type": "summary"
+    },
+    "320": {
+        "file_id": 15,
+        "content": "# pytorch_diffusion + derived encoder decoder\nimport math\nimport torch\nimport numpy as np\nimport torch.nn as nn\nfrom einops import rearrange\nfrom utils.utils import instantiate_from_config\nfrom lvdm.modules.attention import LinearAttention\ndef nonlinearity(x):\n    # swish\n    return x*torch.sigmoid(x)\ndef Normalize(in_channels, num_groups=32):\n    return torch.nn.GroupNorm(num_groups=num_groups, num_channels=in_channels, eps=1e-6, affine=True)\nclass LinAttnBlock(LinearAttention):\n    \"\"\"to match AttnBlock usage\"\"\"\n    def __init__(self, in_channels):\n        super().__init__(dim=in_channels, heads=1, dim_head=in_channels)\nclass AttnBlock(nn.Module):\n    def __init__(self, in_channels):\n        super().__init__()\n        self.in_channels = in_channels\n        self.norm = Normalize(in_channels)\n        self.q = torch.nn.Conv2d(in_channels,\n                                 in_channels,\n                                 kernel_size=1,\n                                 stride=1,\n                                 padding=0)",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:1-36"
+    },
+    "321": {
+        "file_id": 15,
+        "content": "This code defines a module for attention blocks, which includes normalization layers, convolutional layers, and Swish nonlinearity. It also includes functions to define the number of groups for group normalization and create instances from configuration files. The modules aim to process input with various channels and heads in attention mechanisms.",
+        "type": "comment"
+    },
+    "322": {
+        "file_id": 15,
+        "content": "        self.k = torch.nn.Conv2d(in_channels,\n                                 in_channels,\n                                 kernel_size=1,\n                                 stride=1,\n                                 padding=0)\n        self.v = torch.nn.Conv2d(in_channels,\n                                 in_channels,\n                                 kernel_size=1,\n                                 stride=1,\n                                 padding=0)\n        self.proj_out = torch.nn.Conv2d(in_channels,\n                                        in_channels,\n                                        kernel_size=1,\n                                        stride=1,\n                                        padding=0)\n    def forward(self, x):\n        h_ = x\n        h_ = self.norm(h_)\n        q = self.q(h_)\n        k = self.k(h_)\n        v = self.v(h_)\n        # compute attention\n        b,c,h,w = q.shape\n        q = q.reshape(b,c,h*w) # bcl\n        q = q.permute(0,2,1)   # bcl -> blc l=hw\n        k = k.reshape(b,c,h*w) # bcl",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:37-64"
+    },
+    "323": {
+        "file_id": 15,
+        "content": "This code defines a Conv2d layer for key, value and output projection in an attention mechanism. The forward function computes the attention by reshaping and permuting the input tensors, then performs element-wise multiplication and softmax normalization to get the attention weights.",
+        "type": "comment"
+    },
+    "324": {
+        "file_id": 15,
+        "content": "        w_ = torch.bmm(q,k)    # b,hw,hw    w[b,i,j]=sum_c q[b,i,c]k[b,c,j]\n        w_ = w_ * (int(c)**(-0.5))\n        w_ = torch.nn.functional.softmax(w_, dim=2)\n        # attend to values\n        v = v.reshape(b,c,h*w)\n        w_ = w_.permute(0,2,1)   # b,hw,hw (first hw of k, second of q)\n        h_ = torch.bmm(v,w_)     # b, c,hw (hw of q) h_[b,c,j] = sum_i v[b,c,i] w_[b,i,j]\n        h_ = h_.reshape(b,c,h,w)\n        h_ = self.proj_out(h_)\n        return x+h_\ndef make_attn(in_channels, attn_type=\"vanilla\"):\n    assert attn_type in [\"vanilla\", \"linear\", \"none\"], f'attn_type {attn_type} unknown'\n    #print(f\"making attention of type '{attn_type}' with {in_channels} in_channels\")\n    if attn_type == \"vanilla\":\n        return AttnBlock(in_channels)\n    elif attn_type == \"none\":\n        return nn.Identity(in_channels)\n    else:\n        return LinAttnBlock(in_channels)\nclass Downsample(nn.Module):\n    def __init__(self, in_channels, with_conv):\n        super().__init__()\n        self.with_conv = with_conv\n        self.in_channels = in_channels",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:66-94"
+    },
+    "325": {
+        "file_id": 15,
+        "content": "The code defines a function for making attention blocks with different types (vanilla, linear, or none) and a downsampling module. It also includes functions to calculate attention scores and apply them to values, resulting in an output.",
+        "type": "comment"
+    },
+    "326": {
+        "file_id": 15,
+        "content": "        if self.with_conv:\n            # no asymmetric padding in torch conv, must do it ourselves\n            self.conv = torch.nn.Conv2d(in_channels,\n                                        in_channels,\n                                        kernel_size=3,\n                                        stride=2,\n                                        padding=0)\n    def forward(self, x):\n        if self.with_conv:\n            pad = (0,1,0,1)\n            x = torch.nn.functional.pad(x, pad, mode=\"constant\", value=0)\n            x = self.conv(x)\n        else:\n            x = torch.nn.functional.avg_pool2d(x, kernel_size=2, stride=2)\n        return x\nclass Upsample(nn.Module):\n    def __init__(self, in_channels, with_conv):\n        super().__init__()\n        self.with_conv = with_conv\n        self.in_channels = in_channels\n        if self.with_conv:\n            self.conv = torch.nn.Conv2d(in_channels,\n                                        in_channels,\n                                        kernel_size=3,\n                                        stride=1,",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:95-120"
+    },
+    "327": {
+        "file_id": 15,
+        "content": "The code defines a class \"AE_Module\" with a Conv2d layer and an optional upsampling operation based on the \"with_conv\" flag. If \"with_conv\" is True, it applies padding to the input, performs convolution, and returns the result. Otherwise, it uses average pooling for downsampling. The code also defines a separate class \"Upsample\" that inherits from nn.Module and takes in_channels and with_conv as parameters.",
+        "type": "comment"
+    },
+    "328": {
+        "file_id": 15,
+        "content": "                                        padding=1)\n    def forward(self, x):\n        x = torch.nn.functional.interpolate(x, scale_factor=2.0, mode=\"nearest\")\n        if self.with_conv:\n            x = self.conv(x)\n        return x\ndef get_timestep_embedding(timesteps, embedding_dim):\n    \"\"\"\n    This matches the implementation in Denoising Diffusion Probabilistic Models:\n    From Fairseq.\n    Build sinusoidal embeddings.\n    This matches the implementation in tensor2tensor, but differs slightly\n    from the description in Section 3.5 of \"Attention Is All You Need\".\n    \"\"\"\n    assert len(timesteps.shape) == 1\n    half_dim = embedding_dim // 2\n    emb = math.log(10000) / (half_dim - 1)\n    emb = torch.exp(torch.arange(half_dim, dtype=torch.float32) * -emb)\n    emb = emb.to(device=timesteps.device)\n    emb = timesteps.float()[:, None] * emb[None, :]\n    emb = torch.cat([torch.sin(emb), torch.cos(emb)], dim=1)\n    if embedding_dim % 2 == 1:  # zero pad\n        emb = torch.nn.functional.pad(emb, (0,1,0,0))\n    return emb",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:121-147"
+    },
+    "329": {
+        "file_id": 15,
+        "content": "The function defines a convolutional neural network module that performs interpolation and optional convolution on its input. It also includes a separate function that generates timestep embeddings based on the sinusoidal function, which matches implementations in Denoising Diffusion Probabilistic Models from Fairseq and slightly differs from the description in \"Attention Is All You Need\". The generated embeddings are used for some downstream task.",
+        "type": "comment"
+    },
+    "330": {
+        "file_id": 15,
+        "content": "class ResnetBlock(nn.Module):\n    def __init__(self, *, in_channels, out_channels=None, conv_shortcut=False,\n                 dropout, temb_channels=512):\n        super().__init__()\n        self.in_channels = in_channels\n        out_channels = in_channels if out_channels is None else out_channels\n        self.out_channels = out_channels\n        self.use_conv_shortcut = conv_shortcut\n        self.norm1 = Normalize(in_channels)\n        self.conv1 = torch.nn.Conv2d(in_channels,\n                                     out_channels,\n                                     kernel_size=3,\n                                     stride=1,\n                                     padding=1)\n        if temb_channels > 0:\n            self.temb_proj = torch.nn.Linear(temb_channels,\n                                             out_channels)\n        self.norm2 = Normalize(out_channels)\n        self.dropout = torch.nn.Dropout(dropout)\n        self.conv2 = torch.nn.Conv2d(out_channels,\n                                     out_channels,",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:151-172"
+    },
+    "331": {
+        "file_id": 15,
+        "content": "This code defines a ResnetBlock class that inherits from nn.Module in PyTorch. It takes input channels, optional output channels, convolutional shortcut flag, dropout rate and temb_channels as parameters. The block consists of normalization layers, convolution layers and a dropout layer to process the input data.",
+        "type": "comment"
+    },
+    "332": {
+        "file_id": 15,
+        "content": "                                     kernel_size=3,\n                                     stride=1,\n                                     padding=1)\n        if self.in_channels != self.out_channels:\n            if self.use_conv_shortcut:\n                self.conv_shortcut = torch.nn.Conv2d(in_channels,\n                                                     out_channels,\n                                                     kernel_size=3,\n                                                     stride=1,\n                                                     padding=1)\n            else:\n                self.nin_shortcut = torch.nn.Conv2d(in_channels,\n                                                    out_channels,\n                                                    kernel_size=1,\n                                                    stride=1,\n                                                    padding=0)\n    def forward(self, x, temb):\n        h = x\n        h = self.norm1(h)\n        h = nonlinearity(h)\n        h = self.conv1(h)",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:173-194"
+    },
+    "333": {
+        "file_id": 15,
+        "content": "The code initializes a Conv2d layer with specific parameters and applies normalization, nonlinearity, and convolution operations on the input 'x'. If in_channels and out_channels are different, it also adds a shortcut connection using either Conv2d or another Conv2d depending on the use_conv_shortcut flag.",
+        "type": "comment"
+    },
+    "334": {
+        "file_id": 15,
+        "content": "        if temb is not None:\n            h = h + self.temb_proj(nonlinearity(temb))[:,:,None,None]\n        h = self.norm2(h)\n        h = nonlinearity(h)\n        h = self.dropout(h)\n        h = self.conv2(h)\n        if self.in_channels != self.out_channels:\n            if self.use_conv_shortcut:\n                x = self.conv_shortcut(x)\n            else:\n                x = self.nin_shortcut(x)\n        return x+h\nclass Model(nn.Module):\n    def __init__(self, *, ch, out_ch, ch_mult=(1,2,4,8), num_res_blocks,\n                 attn_resolutions, dropout=0.0, resamp_with_conv=True, in_channels,\n                 resolution, use_timestep=True, use_linear_attn=False, attn_type=\"vanilla\"):\n        super().__init__()\n        if use_linear_attn: attn_type = \"linear\"\n        self.ch = ch\n        self.temb_ch = self.ch*4\n        self.num_resolutions = len(ch_mult)\n        self.num_res_blocks = num_res_blocks\n        self.resolution = resolution\n        self.in_channels = in_channels\n        self.use_timestep = use_timestep",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:196-225"
+    },
+    "335": {
+        "file_id": 15,
+        "content": "The code defines a class for an attention-based architecture module. It includes operations like convolution, normalization, nonlinearity activation, and dropout. The module can have configurable options such as in_channels, out_channels, number of resolution levels, and whether to use timestamps or linear attention. The code also initializes member variables for the number of resolutions, in/out channels, and the type of attention mechanism being used.",
+        "type": "comment"
+    },
+    "336": {
+        "file_id": 15,
+        "content": "        if self.use_timestep:\n            # timestep embedding\n            self.temb = nn.Module()\n            self.temb.dense = nn.ModuleList([\n                torch.nn.Linear(self.ch,\n                                self.temb_ch),\n                torch.nn.Linear(self.temb_ch,\n                                self.temb_ch),\n            ])\n        # downsampling\n        self.conv_in = torch.nn.Conv2d(in_channels,\n                                       self.ch,\n                                       kernel_size=3,\n                                       stride=1,\n                                       padding=1)\n        curr_res = resolution\n        in_ch_mult = (1,)+tuple(ch_mult)\n        self.down = nn.ModuleList()\n        for i_level in range(self.num_resolutions):\n            block = nn.ModuleList()\n            attn = nn.ModuleList()\n            block_in = ch*in_ch_mult[i_level]\n            block_out = ch*ch_mult[i_level]\n            for i_block in range(self.num_res_blocks):\n                block.append(ResnetBlock(in_channels=block_in,",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:226-252"
+    },
+    "337": {
+        "file_id": 15,
+        "content": "This code defines a module for an Autoencoder, consisting of timestep embedding and downsampling layers. The timestep embedding uses two dense layers for transformation. Downsampling is performed using conv2d with specified kernel size, stride, and padding. It has multiple resolutions with different channel multipliers and num_res_blocks. ResnetBlock is also defined as a separate module.",
+        "type": "comment"
+    },
+    "338": {
+        "file_id": 15,
+        "content": "                                         out_channels=block_out,\n                                         temb_channels=self.temb_ch,\n                                         dropout=dropout))\n                block_in = block_out\n                if curr_res in attn_resolutions:\n                    attn.append(make_attn(block_in, attn_type=attn_type))\n            down = nn.Module()\n            down.block = block\n            down.attn = attn\n            if i_level != self.num_resolutions-1:\n                down.downsample = Downsample(block_in, resamp_with_conv)\n                curr_res = curr_res // 2\n            self.down.append(down)\n        # middle\n        self.mid = nn.Module()\n        self.mid.block_1 = ResnetBlock(in_channels=block_in,\n                                       out_channels=block_in,\n                                       temb_channels=self.temb_ch,\n                                       dropout=dropout)\n        self.mid.attn_1 = make_attn(block_in, attn_type=attn_type)\n        self.mid.block_2 = ResnetBlock(in_channels=block_in,",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:253-274"
+    },
+    "339": {
+        "file_id": 15,
+        "content": "This code initializes a downsampling network with multiple blocks, each containing convolutional layers and attention modules. It then creates a middle block with ResnetBlocks and attention modules. The code also handles downsampling for non-final resolutions by appending downsample modules to the network.",
+        "type": "comment"
+    },
+    "340": {
+        "file_id": 15,
+        "content": "                                       out_channels=block_in,\n                                       temb_channels=self.temb_ch,\n                                       dropout=dropout)\n        # upsampling\n        self.up = nn.ModuleList()\n        for i_level in reversed(range(self.num_resolutions)):\n            block = nn.ModuleList()\n            attn = nn.ModuleList()\n            block_out = ch*ch_mult[i_level]\n            skip_in = ch*ch_mult[i_level]\n            for i_block in range(self.num_res_blocks+1):\n                if i_block == self.num_res_blocks:\n                    skip_in = ch*in_ch_mult[i_level]\n                block.append(ResnetBlock(in_channels=block_in+skip_in,\n                                         out_channels=block_out,\n                                         temb_channels=self.temb_ch,\n                                         dropout=dropout))\n                block_in = block_out\n                if curr_res in attn_resolutions:\n                    attn.append(make_attn(block_in, attn_type=attn_type))",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:275-295"
+    },
+    "341": {
+        "file_id": 15,
+        "content": "This code defines a network module with residual blocks and attention mechanisms. It has configurable parameters such as block input/output channels, dropout rate, number of resolutions, and types of attention used. The upsampling part creates a list of residual blocks to increase the resolution level for each stage.",
+        "type": "comment"
+    },
+    "342": {
+        "file_id": 15,
+        "content": "            up = nn.Module()\n            up.block = block\n            up.attn = attn\n            if i_level != 0:\n                up.upsample = Upsample(block_in, resamp_with_conv)\n                curr_res = curr_res * 2\n            self.up.insert(0, up) # prepend to get consistent order\n        # end\n        self.norm_out = Normalize(block_in)\n        self.conv_out = torch.nn.Conv2d(block_in,\n                                        out_ch,\n                                        kernel_size=3,\n                                        stride=1,\n                                        padding=1)\n    def forward(self, x, t=None, context=None):\n        #assert x.shape[2] == x.shape[3] == self.resolution\n        if context is not None:\n            # assume aligned context, cat along channel axis\n            x = torch.cat((x, context), dim=1)\n        if self.use_timestep:\n            # timestep embedding\n            assert t is not None\n            temb = get_timestep_embedding(t, self.ch)\n            temb = self.temb.dense[0](temb)",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:296-321"
+    },
+    "343": {
+        "file_id": 15,
+        "content": "The code defines a neural network module for upsampling input with skip connections, normalization and convolution. The module takes input of shape (batch_size, block_in, height, width) and returns output of shape (batch_size, out_ch, height, width). It also includes an optional context input and a timestep embedding if specified.",
+        "type": "comment"
+    },
+    "344": {
+        "file_id": 15,
+        "content": "            temb = nonlinearity(temb)\n            temb = self.temb.dense[1](temb)\n        else:\n            temb = None\n        # downsampling\n        hs = [self.conv_in(x)]\n        for i_level in range(self.num_resolutions):\n            for i_block in range(self.num_res_blocks):\n                h = self.down[i_level].block[i_block](hs[-1], temb)\n                if len(self.down[i_level].attn) > 0:\n                    h = self.down[i_level].attn[i_block](h)\n                hs.append(h)\n            if i_level != self.num_resolutions-1:\n                hs.append(self.down[i_level].downsample(hs[-1]))\n        # middle\n        h = hs[-1]\n        h = self.mid.block_1(h, temb)\n        h = self.mid.attn_1(h)\n        h = self.mid.block_2(h, temb)\n        # upsampling\n        for i_level in reversed(range(self.num_resolutions)):\n            for i_block in range(self.num_res_blocks+1):\n                h = self.up[i_level].block[i_block](\n                    torch.cat([h, hs.pop()], dim=1), temb)\n                if len(self.up[i_level].attn) > 0:",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:322-349"
+    },
+    "345": {
+        "file_id": 15,
+        "content": "This code is implementing a neural network module, performing downsampling, middle operations, and upsampling for each level of the network. It also includes non-linear transformations and attention mechanisms. The final output is obtained after processing through all levels and blocks.",
+        "type": "comment"
+    },
+    "346": {
+        "file_id": 15,
+        "content": "                    h = self.up[i_level].attn[i_block](h)\n            if i_level != 0:\n                h = self.up[i_level].upsample(h)\n        # end\n        h = self.norm_out(h)\n        h = nonlinearity(h)\n        h = self.conv_out(h)\n        return h\n    def get_last_layer(self):\n        return self.conv_out.weight\nclass Encoder(nn.Module):\n    def __init__(self, *, ch, out_ch, ch_mult=(1,2,4,8), num_res_blocks,\n                 attn_resolutions, dropout=0.0, resamp_with_conv=True, in_channels,\n                 resolution, z_channels, double_z=True, use_linear_attn=False, attn_type=\"vanilla\",\n                 **ignore_kwargs):\n        super().__init__()\n        if use_linear_attn: attn_type = \"linear\"\n        self.ch = ch\n        self.temb_ch = 0\n        self.num_resolutions = len(ch_mult)\n        self.num_res_blocks = num_res_blocks\n        self.resolution = resolution\n        self.in_channels = in_channels\n        # downsampling\n        self.conv_in = torch.nn.Conv2d(in_channels,\n                                       self.ch,",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:350-380"
+    },
+    "347": {
+        "file_id": 15,
+        "content": "This code defines a class for an Encoder module in a neural network. It initializes the attributes and has methods for processing data through downsampling, residual blocks, and applying nonlinearities. The get_last_layer method returns the weight of the last convolutional layer. The Encoder class accepts parameters for channel size, output channel size, channel multipliers, number of residual blocks, attention resolutions, dropout rate, etc. It also includes options for different attention types and linear attentions.",
+        "type": "comment"
+    },
+    "348": {
+        "file_id": 15,
+        "content": "                                       kernel_size=3,\n                                       stride=1,\n                                       padding=1)\n        curr_res = resolution\n        in_ch_mult = (1,)+tuple(ch_mult)\n        self.in_ch_mult = in_ch_mult\n        self.down = nn.ModuleList()\n        for i_level in range(self.num_resolutions):\n            block = nn.ModuleList()\n            attn = nn.ModuleList()\n            block_in = ch*in_ch_mult[i_level]\n            block_out = ch*ch_mult[i_level]\n            for i_block in range(self.num_res_blocks):\n                block.append(ResnetBlock(in_channels=block_in,\n                                         out_channels=block_out,\n                                         temb_channels=self.temb_ch,\n                                         dropout=dropout))\n                block_in = block_out\n                if curr_res in attn_resolutions:\n                    attn.append(make_attn(block_in, attn_type=attn_type))\n            down = nn.Module()\n            down.block = block",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:381-403"
+    },
+    "349": {
+        "file_id": 15,
+        "content": "This code initializes a downsampling module for an AE model. It creates a series of ResnetBlocks and optional attention modules, with varying input/output channels depending on the resolution level. The block_in and curr_res variables track the current input size and downsampled resolution respectively.",
+        "type": "comment"
+    },
+    "350": {
+        "file_id": 15,
+        "content": "            down.attn = attn\n            if i_level != self.num_resolutions-1:\n                down.downsample = Downsample(block_in, resamp_with_conv)\n                curr_res = curr_res // 2\n            self.down.append(down)\n        # middle\n        self.mid = nn.Module()\n        self.mid.block_1 = ResnetBlock(in_channels=block_in,\n                                       out_channels=block_in,\n                                       temb_channels=self.temb_ch,\n                                       dropout=dropout)\n        self.mid.attn_1 = make_attn(block_in, attn_type=attn_type)\n        self.mid.block_2 = ResnetBlock(in_channels=block_in,\n                                       out_channels=block_in,\n                                       temb_channels=self.temb_ch,\n                                       dropout=dropout)\n        # end\n        self.norm_out = Normalize(block_in)\n        self.conv_out = torch.nn.Conv2d(block_in,\n                                        2*z_channels if double_z else z_channels,",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:404-425"
+    },
+    "351": {
+        "file_id": 15,
+        "content": "The code defines a network module with downsampling, middle blocks (ResnetBlock and attention), and an output layer. It creates the downsampling layers based on the current resolution and appends them to self.down list. The middle part includes two ResnetBlocks and an attention layer. Finally, it creates a normalization layer and a convolution output layer for the final output.",
+        "type": "comment"
+    },
+    "352": {
+        "file_id": 15,
+        "content": "                                        kernel_size=3,\n                                        stride=1,\n                                        padding=1)\n    def forward(self, x):\n        # timestep embedding\n        temb = None\n        # print(f'encoder-input={x.shape}')\n        # downsampling\n        hs = [self.conv_in(x)]\n        # print(f'encoder-conv in feat={hs[0].shape}')\n        for i_level in range(self.num_resolutions):\n            for i_block in range(self.num_res_blocks):\n                h = self.down[i_level].block[i_block](hs[-1], temb)\n                # print(f'encoder-down feat={h.shape}')\n                if len(self.down[i_level].attn) > 0:\n                    h = self.down[i_level].attn[i_block](h)\n                hs.append(h)\n            if i_level != self.num_resolutions-1:\n                # print(f'encoder-downsample (input)={hs[-1].shape}')\n                hs.append(self.down[i_level].downsample(hs[-1]))\n                # print(f'encoder-downsample (output)={hs[-1].shape}')\n        # middle",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:426-450"
+    },
+    "353": {
+        "file_id": 15,
+        "content": "This code defines a network encoder, with convolutional layers and downsampling blocks. It takes input, performs timestep embedding, and applies successive downsampling and attention operations to produce features for further processing.",
+        "type": "comment"
+    },
+    "354": {
+        "file_id": 15,
+        "content": "        h = hs[-1]\n        h = self.mid.block_1(h, temb)\n        # print(f'encoder-mid1 feat={h.shape}')\n        h = self.mid.attn_1(h)\n        h = self.mid.block_2(h, temb)\n        # print(f'encoder-mid2 feat={h.shape}')\n        # end\n        h = self.norm_out(h)\n        h = nonlinearity(h)\n        h = self.conv_out(h)\n        # print(f'end feat={h.shape}')\n        return h\nclass Decoder(nn.Module):\n    def __init__(self, *, ch, out_ch, ch_mult=(1,2,4,8), num_res_blocks,\n                 attn_resolutions, dropout=0.0, resamp_with_conv=True, in_channels,\n                 resolution, z_channels, give_pre_end=False, tanh_out=False, use_linear_attn=False,\n                 attn_type=\"vanilla\", **ignorekwargs):\n        super().__init__()\n        if use_linear_attn: attn_type = \"linear\"\n        self.ch = ch\n        self.temb_ch = 0\n        self.num_resolutions = len(ch_mult)\n        self.num_res_blocks = num_res_blocks\n        self.resolution = resolution\n        self.in_channels = in_channels\n        self.give_pre_end = give_pre_end",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:451-479"
+    },
+    "355": {
+        "file_id": 15,
+        "content": "Encoder module processes input, returns final feature map; Decoder module initializes with specified parameters, prepares for resnet-like blocks and attention mechanisms.",
+        "type": "comment"
+    },
+    "356": {
+        "file_id": 15,
+        "content": "        self.tanh_out = tanh_out\n        # compute in_ch_mult, block_in and curr_res at lowest res\n        in_ch_mult = (1,)+tuple(ch_mult)\n        block_in = ch*ch_mult[self.num_resolutions-1]\n        curr_res = resolution // 2**(self.num_resolutions-1)\n        self.z_shape = (1,z_channels,curr_res,curr_res)\n        print(\"AE working on z of shape {} = {} dimensions.\".format(\n            self.z_shape, np.prod(self.z_shape)))\n        # z to block_in\n        self.conv_in = torch.nn.Conv2d(z_channels,\n                                       block_in,\n                                       kernel_size=3,\n                                       stride=1,\n                                       padding=1)\n        # middle\n        self.mid = nn.Module()\n        self.mid.block_1 = ResnetBlock(in_channels=block_in,\n                                       out_channels=block_in,\n                                       temb_channels=self.temb_ch,\n                                       dropout=dropout)\n        self.mid.attn_1 = make_attn(block_in, attn_type=attn_type)",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:480-503"
+    },
+    "357": {
+        "file_id": 15,
+        "content": "This code is initializing a model for Autoencoder with given parameters. It defines the Conv2d layer, ResnetBlock, and make_attn function to transform the input (z) into block_in shape and applies middle blocks. The code also prints the dimensions of the z tensor.",
+        "type": "comment"
+    },
+    "358": {
+        "file_id": 15,
+        "content": "        self.mid.block_2 = ResnetBlock(in_channels=block_in,\n                                       out_channels=block_in,\n                                       temb_channels=self.temb_ch,\n                                       dropout=dropout)\n        # upsampling\n        self.up = nn.ModuleList()\n        for i_level in reversed(range(self.num_resolutions)):\n            block = nn.ModuleList()\n            attn = nn.ModuleList()\n            block_out = ch*ch_mult[i_level]\n            for i_block in range(self.num_res_blocks+1):\n                block.append(ResnetBlock(in_channels=block_in,\n                                         out_channels=block_out,\n                                         temb_channels=self.temb_ch,\n                                         dropout=dropout))\n                block_in = block_out\n                if curr_res in attn_resolutions:\n                    attn.append(make_attn(block_in, attn_type=attn_type))\n            up = nn.Module()\n            up.block = block\n            up.attn = attn",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:504-525"
+    },
+    "359": {
+        "file_id": 15,
+        "content": "This code creates a ResnetBlock and multiple ResnetBlocks for upsampling in a network, with attention mechanism optionally added. It uses specified input and output channels, embedding dimensions, dropout rate, and number of resolutions. The blocks are organized within ModuleLists for flexibility and efficient processing.",
+        "type": "comment"
+    },
+    "360": {
+        "file_id": 15,
+        "content": "            if i_level != 0:\n                up.upsample = Upsample(block_in, resamp_with_conv)\n                curr_res = curr_res * 2\n            self.up.insert(0, up) # prepend to get consistent order\n        # end\n        self.norm_out = Normalize(block_in)\n        self.conv_out = torch.nn.Conv2d(block_in,\n                                        out_ch,\n                                        kernel_size=3,\n                                        stride=1,\n                                        padding=1)\n    def forward(self, z):\n        #assert z.shape[1:] == self.z_shape[1:]\n        self.last_z_shape = z.shape\n        # print(f'decoder-input={z.shape}')\n        # timestep embedding\n        temb = None\n        # z to block_in\n        h = self.conv_in(z)\n        # print(f'decoder-conv in feat={h.shape}')\n        # middle\n        h = self.mid.block_1(h, temb)\n        h = self.mid.attn_1(h)\n        h = self.mid.block_2(h, temb)\n        # print(f'decoder-mid feat={h.shape}')\n        # upsampling\n        for i_level in reversed(range(self.num_resolutions)):",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:526-558"
+    },
+    "361": {
+        "file_id": 15,
+        "content": "The code snippet initializes a network module with an upsampling block for each resolution level and a normalization layer. It also includes a convolutional layer for the output. The forward method performs convolution, processes middle layers using attention mechanism, and iterates through upsampling blocks in reverse order to produce the final output.",
+        "type": "comment"
+    },
+    "362": {
+        "file_id": 15,
+        "content": "            for i_block in range(self.num_res_blocks+1):\n                h = self.up[i_level].block[i_block](h, temb)\n                if len(self.up[i_level].attn) > 0:\n                    h = self.up[i_level].attn[i_block](h)\n                # print(f'decoder-up feat={h.shape}')\n            if i_level != 0:\n                h = self.up[i_level].upsample(h)\n                # print(f'decoder-upsample feat={h.shape}')\n        # end\n        if self.give_pre_end:\n            return h\n        h = self.norm_out(h)\n        h = nonlinearity(h)\n        h = self.conv_out(h)\n        # print(f'decoder-conv_out feat={h.shape}')\n        if self.tanh_out:\n            h = torch.tanh(h)\n        return h\nclass SimpleDecoder(nn.Module):\n    def __init__(self, in_channels, out_channels, *args, **kwargs):\n        super().__init__()\n        self.model = nn.ModuleList([nn.Conv2d(in_channels, in_channels, 1),\n                                     ResnetBlock(in_channels=in_channels,\n                                                 out_channels=2 * in_channels,",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:559-586"
+    },
+    "363": {
+        "file_id": 15,
+        "content": "This code defines a Decoder class that processes features extracted from an encoder. It includes convolutional layers, residual blocks, and optional upsampling. The resulting features are passed through normalization, non-linear activation, and potentially a tanh operation before being returned as output.",
+        "type": "comment"
+    },
+    "364": {
+        "file_id": 15,
+        "content": "                                                 temb_channels=0, dropout=0.0),\n                                     ResnetBlock(in_channels=2 * in_channels,\n                                                out_channels=4 * in_channels,\n                                                temb_channels=0, dropout=0.0),\n                                     ResnetBlock(in_channels=4 * in_channels,\n                                                out_channels=2 * in_channels,\n                                                temb_channels=0, dropout=0.0),\n                                     nn.Conv2d(2*in_channels, in_channels, 1),\n                                     Upsample(in_channels, with_conv=True)])\n        # end\n        self.norm_out = Normalize(in_channels)\n        self.conv_out = torch.nn.Conv2d(in_channels,\n                                        out_channels,\n                                        kernel_size=3,\n                                        stride=1,\n                                        padding=1)",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:587-602"
+    },
+    "365": {
+        "file_id": 15,
+        "content": "This code defines a ResnetBlock based model for image upsampling and normalization. It uses convolutional layers, residual blocks, normalization, and upsampling operations. The model takes input channels (in_channels) and outputs channels (out_channels). It consists of several Conv2d and ResnetBlock layers followed by a Normalize layer and a final Conv2d layer for the output.",
+        "type": "comment"
+    },
+    "366": {
+        "file_id": 15,
+        "content": "    def forward(self, x):\n        for i, layer in enumerate(self.model):\n            if i in [1,2,3]:\n                x = layer(x, None)\n            else:\n                x = layer(x)\n        h = self.norm_out(x)\n        h = nonlinearity(h)\n        x = self.conv_out(h)\n        return x\nclass UpsampleDecoder(nn.Module):\n    def __init__(self, in_channels, out_channels, ch, num_res_blocks, resolution,\n                 ch_mult=(2,2), dropout=0.0):\n        super().__init__()\n        # upsampling\n        self.temb_ch = 0\n        self.num_resolutions = len(ch_mult)\n        self.num_res_blocks = num_res_blocks\n        block_in = in_channels\n        curr_res = resolution // 2 ** (self.num_resolutions - 1)\n        self.res_blocks = nn.ModuleList()\n        self.upsample_blocks = nn.ModuleList()\n        for i_level in range(self.num_resolutions):\n            res_block = []\n            block_out = ch * ch_mult[i_level]\n            for i_block in range(self.num_res_blocks + 1):\n                res_block.append(ResnetBlock(in_channels=block_in,",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:604-633"
+    },
+    "367": {
+        "file_id": 15,
+        "content": "This code defines a class `UpsampleDecoder` that initializes an upsampling decoder module for a neural network. The module consists of multiple resnet blocks and upsample blocks, which are initialized based on the input and output channels, channel multipliers, number of resolution levels, and the desired resolution. These blocks perform various operations such as convolution, normalization, and nonlinearity.",
+        "type": "comment"
+    },
+    "368": {
+        "file_id": 15,
+        "content": "                                         out_channels=block_out,\n                                         temb_channels=self.temb_ch,\n                                         dropout=dropout))\n                block_in = block_out\n            self.res_blocks.append(nn.ModuleList(res_block))\n            if i_level != self.num_resolutions - 1:\n                self.upsample_blocks.append(Upsample(block_in, True))\n                curr_res = curr_res * 2\n        # end\n        self.norm_out = Normalize(block_in)\n        self.conv_out = torch.nn.Conv2d(block_in,\n                                        out_channels,\n                                        kernel_size=3,\n                                        stride=1,\n                                        padding=1)\n    def forward(self, x):\n        # upsampling\n        h = x\n        for k, i_level in enumerate(range(self.num_resolutions)):\n            for i_block in range(self.num_res_blocks + 1):\n                h = self.res_blocks[i_level][i_block](h, None)\n            if i_level != self.num_resolutions - 1:",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:634-657"
+    },
+    "369": {
+        "file_id": 15,
+        "content": "This code initializes a residual network for image processing. It iterates through multiple levels and blocks, appending res_blocks and upsample_blocks as necessary. The final layers are a normalization layer and a convolutional layer for the output channel. The forward function performs upsampling followed by applying the initialized blocks in the network sequentially.",
+        "type": "comment"
+    },
+    "370": {
+        "file_id": 15,
+        "content": "                h = self.upsample_blocks[k](h)\n        h = self.norm_out(h)\n        h = nonlinearity(h)\n        h = self.conv_out(h)\n        return h\nclass LatentRescaler(nn.Module):\n    def __init__(self, factor, in_channels, mid_channels, out_channels, depth=2):\n        super().__init__()\n        # residual block, interpolate, residual block\n        self.factor = factor\n        self.conv_in = nn.Conv2d(in_channels,\n                                 mid_channels,\n                                 kernel_size=3,\n                                 stride=1,\n                                 padding=1)\n        self.res_block1 = nn.ModuleList([ResnetBlock(in_channels=mid_channels,\n                                                     out_channels=mid_channels,\n                                                     temb_channels=0,\n                                                     dropout=0.0) for _ in range(depth)])\n        self.attn = AttnBlock(mid_channels)\n        self.res_block2 = nn.ModuleList([ResnetBlock(in_channels=mid_channels,",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:658-680"
+    },
+    "371": {
+        "file_id": 15,
+        "content": "The code defines a LatentRescaler class with residual blocks and an attention block, which takes input channels, mid-channels, output channels, and depth as parameters. It performs upsampling, normalization, nonlinearity, convolution, and returns the output. The AttnBlock is used to apply attention on the mid-channel features.",
+        "type": "comment"
+    },
+    "372": {
+        "file_id": 15,
+        "content": "                                                     out_channels=mid_channels,\n                                                     temb_channels=0,\n                                                     dropout=0.0) for _ in range(depth)])\n        self.conv_out = nn.Conv2d(mid_channels,\n                                  out_channels,\n                                  kernel_size=1,\n                                  )\n    def forward(self, x):\n        x = self.conv_in(x)\n        for block in self.res_block1:\n            x = block(x, None)\n        x = torch.nn.functional.interpolate(x, size=(int(round(x.shape[2]*self.factor)), int(round(x.shape[3]*self.factor))))\n        x = self.attn(x)\n        for block in self.res_block2:\n            x = block(x, None)\n        x = self.conv_out(x)\n        return x\nclass MergedRescaleEncoder(nn.Module):\n    def __init__(self, in_channels, ch, resolution, out_ch, num_res_blocks,\n                 attn_resolutions, dropout=0.0, resamp_with_conv=True,\n                 ch_mult=(1,2,4,8), rescale_factor=1.0, rescale_module_depth=1):",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:681-705"
+    },
+    "373": {
+        "file_id": 15,
+        "content": "This code defines a neural network module for a MergedRescaleEncoder. It has two resblocks, convolutions, and an attention mechanism. The resblocks are defined within the class and applied to the input tensor 'x'. The output is then passed through a convolution layer before being returned. Resamp_with_conv parameter determines whether to use a convolutional layer for resampling or not. This module can be used for image processing tasks such as image classification, segmentation, etc.",
+        "type": "comment"
+    },
+    "374": {
+        "file_id": 15,
+        "content": "        super().__init__()\n        intermediate_chn = ch * ch_mult[-1]\n        self.encoder = Encoder(in_channels=in_channels, num_res_blocks=num_res_blocks, ch=ch, ch_mult=ch_mult,\n                               z_channels=intermediate_chn, double_z=False, resolution=resolution,\n                               attn_resolutions=attn_resolutions, dropout=dropout, resamp_with_conv=resamp_with_conv,\n                               out_ch=None)\n        self.rescaler = LatentRescaler(factor=rescale_factor, in_channels=intermediate_chn,\n                                       mid_channels=intermediate_chn, out_channels=out_ch, depth=rescale_module_depth)\n    def forward(self, x):\n        x = self.encoder(x)\n        x = self.rescaler(x)\n        return x\nclass MergedRescaleDecoder(nn.Module):\n    def __init__(self, z_channels, out_ch, resolution, num_res_blocks, attn_resolutions, ch, ch_mult=(1,2,4,8),\n                 dropout=0.0, resamp_with_conv=True, rescale_factor=1.0, rescale_module_depth=1):\n        super().__init__()",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:706-724"
+    },
+    "375": {
+        "file_id": 15,
+        "content": "This code defines two classes: \"AERescalerDecoder\" and \"MergedRescaleDecoder\". The AERescalerDecoder class initializes an encoder and a rescaler module. The encoder takes input, performs some transformations, and outputs intermediate features. The rescaler then scales these features based on certain factors before returning the result. The MergedRescaleDecoder class is similar to AERescalerDecoder but with additional arguments for resolution, num_res_blocks, attn_resolutions, and ch_mult. Both classes have a forward function that performs the encoding and rescaling operations.",
+        "type": "comment"
+    },
+    "376": {
+        "file_id": 15,
+        "content": "        tmp_chn = z_channels*ch_mult[-1]\n        self.decoder = Decoder(out_ch=out_ch, z_channels=tmp_chn, attn_resolutions=attn_resolutions, dropout=dropout,\n                               resamp_with_conv=resamp_with_conv, in_channels=None, num_res_blocks=num_res_blocks,\n                               ch_mult=ch_mult, resolution=resolution, ch=ch)\n        self.rescaler = LatentRescaler(factor=rescale_factor, in_channels=z_channels, mid_channels=tmp_chn,\n                                       out_channels=tmp_chn, depth=rescale_module_depth)\n    def forward(self, x):\n        x = self.rescaler(x)\n        x = self.decoder(x)\n        return x\nclass Upsampler(nn.Module):\n    def __init__(self, in_size, out_size, in_channels, out_channels, ch_mult=2):\n        super().__init__()\n        assert out_size >= in_size\n        num_blocks = int(np.log2(out_size//in_size))+1\n        factor_up = 1.+ (out_size % in_size)\n        print(f\"Building {self.__class__.__name__} with in_size: {in_size} --> out_size {out_size} and factor {factor_up}\")",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:725-744"
+    },
+    "377": {
+        "file_id": 15,
+        "content": "The code defines a class called `AE_Module` with an initializer method and a forward pass method. It also includes a nested class `Upsampler`. The initializer sets up instances of the `Decoder` and `LatentRescaler` classes, which are used in the forward pass. The `Upsampler` class is defined within this code block and takes in input and output sizes, channel counts, and a multiplier for channel expansion. The constructor calculates the number of upsampling blocks needed based on the size difference between input and output, and the factor by which to increase each block's input size. The constructor also prints out the details of the upsampler being built.",
+        "type": "comment"
+    },
+    "378": {
+        "file_id": 15,
+        "content": "        self.rescaler = LatentRescaler(factor=factor_up, in_channels=in_channels, mid_channels=2*in_channels,\n                                       out_channels=in_channels)\n        self.decoder = Decoder(out_ch=out_channels, resolution=out_size, z_channels=in_channels, num_res_blocks=2,\n                               attn_resolutions=[], in_channels=None, ch=in_channels,\n                               ch_mult=[ch_mult for _ in range(num_blocks)])\n    def forward(self, x):\n        x = self.rescaler(x)\n        x = self.decoder(x)\n        return x\nclass Resize(nn.Module):\n    def __init__(self, in_channels=None, learned=False, mode=\"bilinear\"):\n        super().__init__()\n        self.with_conv = learned\n        self.mode = mode\n        if self.with_conv:\n            print(f\"Note: {self.__class__.__name} uses learned downsampling and will ignore the fixed {mode} mode\")\n            raise NotImplementedError()\n            assert in_channels is not None\n            # no asymmetric padding in torch conv, must do it ourselves",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:745-766"
+    },
+    "379": {
+        "file_id": 15,
+        "content": "This code defines a class that includes a rescaler and decoder for image processing. The rescaler adjusts the input based on a factor, and the decoder applies a specific configuration to decode the adjusted data. It also includes a Resize class that can use either learned or fixed downsampling but currently raises an error for learned downsampling.",
+        "type": "comment"
+    },
+    "380": {
+        "file_id": 15,
+        "content": "            self.conv = torch.nn.Conv2d(in_channels,\n                                        in_channels,\n                                        kernel_size=4,\n                                        stride=2,\n                                        padding=1)\n    def forward(self, x, scale_factor=1.0):\n        if scale_factor==1.0:\n            return x\n        else:\n            x = torch.nn.functional.interpolate(x, mode=self.mode, align_corners=False, scale_factor=scale_factor)\n        return x\nclass FirstStagePostProcessor(nn.Module):\n    def __init__(self, ch_mult:list, in_channels,\n                 pretrained_model:nn.Module=None,\n                 reshape=False,\n                 n_channels=None,\n                 dropout=0.,\n                 pretrained_config=None):\n        super().__init__()\n        if pretrained_config is None:\n            assert pretrained_model is not None, 'Either \"pretrained_model\" or \"pretrained_config\" must not be None'\n            self.pretrained_model = pretrained_model\n        else:",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:767-792"
+    },
+    "381": {
+        "file_id": 15,
+        "content": "The code defines a Conv2d layer and a forward function that performs interpolation if the scale_factor is not 1.0. It also initializes a FirstStagePostProcessor class with various parameters such as channel multipliers, input channels, pretrained model or config, reshape flag, number of output channels, and dropout rate.",
+        "type": "comment"
+    },
+    "382": {
+        "file_id": 15,
+        "content": "            assert pretrained_config is not None, 'Either \"pretrained_model\" or \"pretrained_config\" must not be None'\n            self.instantiate_pretrained(pretrained_config)\n        self.do_reshape = reshape\n        if n_channels is None:\n            n_channels = self.pretrained_model.encoder.ch\n        self.proj_norm = Normalize(in_channels,num_groups=in_channels//2)\n        self.proj = nn.Conv2d(in_channels,n_channels,kernel_size=3,\n                            stride=1,padding=1)\n        blocks = []\n        downs = []\n        ch_in = n_channels\n        for m in ch_mult:\n            blocks.append(ResnetBlock(in_channels=ch_in,out_channels=m*n_channels,dropout=dropout))\n            ch_in = m * n_channels\n            downs.append(Downsample(ch_in, with_conv=False))\n        self.model = nn.ModuleList(blocks)\n        self.downsampler = nn.ModuleList(downs)\n    def instantiate_pretrained(self, config):\n        model = instantiate_from_config(config)\n        self.pretrained_model = model.eval()\n        # self.pretrained_model.train = False",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:793-820"
+    },
+    "383": {
+        "file_id": 15,
+        "content": "The code initializes a residual network (ResnetBlock) for an autoencoder. It takes input channels, output channels, and dropout rate as parameters. The `instantiate_pretrained` method is called to create the pre-trained model based on the provided configuration. The code also defines downsampler modules.",
+        "type": "comment"
+    },
+    "384": {
+        "file_id": 15,
+        "content": "        for param in self.pretrained_model.parameters():\n            param.requires_grad = False\n    @torch.no_grad()\n    def encode_with_pretrained(self,x):\n        c = self.pretrained_model.encode(x)\n        if isinstance(c, DiagonalGaussianDistribution):\n            c = c.mode()\n        return  c\n    def forward(self,x):\n        z_fs = self.encode_with_pretrained(x)\n        z = self.proj_norm(z_fs)\n        z = self.proj(z)\n        z = nonlinearity(z)\n        for submodel, downmodel in zip(self.model,self.downsampler):\n            z = submodel(z,temb=None)\n            z = downmodel(z)\n        if self.do_reshape:\n            z = rearrange(z,'b c h w -> b (h w) c')\n        return z",
+        "type": "code",
+        "location": "/lvdm/modules/networks/ae_modules.py:821-844"
+    },
+    "385": {
+        "file_id": 15,
+        "content": "This code belongs to a network module and disables gradient computation for all parameters in the pretrained model. It has two functions: 'encode_with_pretrained' which encodes an input using the pretrained model and returns either the encoded result or its mode, and 'forward' which performs forward propagation through the network. The 'forward' function applies normalization, nonlinearity, and downsampling operations before potentially reshaping the output.",
+        "type": "comment"
+    },
+    "386": {
+        "file_id": 16,
+        "content": "/lvdm/modules/networks/openaimodel3d.py",
+        "type": "filepath"
+    },
+    "387": {
+        "file_id": 16,
+        "content": "The TimestepEmbedSequential class applies timestep embeddings and initializes UNet models for 3D object reconstruction, including attention, timestep embedding, and residual blocks. The code develops a network model with Transformer, Attention layers for temporal analysis, ResBlock layers, multi-head attention, and temporal convolutions.",
+        "type": "summary"
+    },
+    "388": {
+        "file_id": 16,
+        "content": "from functools import partial\nfrom abc import abstractmethod\nimport torch\nimport torch.nn as nn\nfrom einops import rearrange\nimport torch.nn.functional as F\nfrom lvdm.models.utils_diffusion import timestep_embedding\nfrom lvdm.common import checkpoint\nfrom lvdm.basics import (\n    zero_module,\n    conv_nd,\n    linear,\n    avg_pool_nd,\n    normalization\n)\nfrom lvdm.modules.attention import SpatialTransformer, TemporalTransformer\nclass TimestepBlock(nn.Module):\n    \"\"\"\n    Any module where forward() takes timestep embeddings as a second argument.\n    \"\"\"\n    @abstractmethod\n    def forward(self, x, emb):\n        \"\"\"\n        Apply the module to `x` given `emb` timestep embeddings.\n        \"\"\"\nclass TimestepEmbedSequential(nn.Sequential, TimestepBlock):\n    \"\"\"\n    A sequential module that passes timestep embeddings to the children that\n    support it as an extra input.\n    \"\"\"\n    def forward(self, x, emb, context=None, batch_size=None):\n        for layer in self:\n            if isinstance(layer, TimestepBlock):\n                x = layer(x, emb, batch_size=batch_size)",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:1-39"
+    },
+    "389": {
+        "file_id": 16,
+        "content": "This code defines a TimestepEmbedSequential class which is a sequential module that can pass timestep embeddings to child modules. The forward() method takes two arguments: 'x' for the input and 'emb' for the timestep embeddings. It applies each TimestepBlock in the sequence if it supports the additional timestep embedding input.",
+        "type": "comment"
+    },
+    "390": {
+        "file_id": 16,
+        "content": "            elif isinstance(layer, SpatialTransformer):\n                x = layer(x, context)\n            elif isinstance(layer, TemporalTransformer):\n                x = rearrange(x, '(b f) c h w -> b c f h w', b=batch_size)\n                x = layer(x, context)\n                x = rearrange(x, 'b c f h w -> (b f) c h w')\n            else:\n                x = layer(x)\n        return x\nclass Downsample(nn.Module):\n    \"\"\"\n    A downsampling layer with an optional convolution.\n    :param channels: channels in the inputs and outputs.\n    :param use_conv: a bool determining if a convolution is applied.\n    :param dims: determines if the signal is 1D, 2D, or 3D. If 3D, then\n                 downsampling occurs in the inner-two dimensions.\n    \"\"\"\n    def __init__(self, channels, use_conv, dims=2, out_channels=None, padding=1):\n        super().__init__()\n        self.channels = channels\n        self.out_channels = out_channels or channels\n        self.use_conv = use_conv\n        self.dims = dims\n        stride = 2 if dims != 3 else (1, 2, 2)",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:40-66"
+    },
+    "391": {
+        "file_id": 16,
+        "content": "The code checks the type of layer and applies specific transformations if it is a SpatialTransformer or TemporalTransformer, otherwise, it just passes through. The Downsample class is a downsampling layer with an optional convolution for 1D, 2D, or 3D signals. It has configurable parameters such as channels, use_conv, dims, out_channels, and padding.",
+        "type": "comment"
+    },
+    "392": {
+        "file_id": 16,
+        "content": "        if use_conv:\n            self.op = conv_nd(\n                dims, self.channels, self.out_channels, 3, stride=stride, padding=padding\n            )\n        else:\n            assert self.channels == self.out_channels\n            self.op = avg_pool_nd(dims, kernel_size=stride, stride=stride)\n    def forward(self, x):\n        assert x.shape[1] == self.channels\n        return self.op(x)\nclass Upsample(nn.Module):\n    \"\"\"\n    An upsampling layer with an optional convolution.\n    :param channels: channels in the inputs and outputs.\n    :param use_conv: a bool determining if a convolution is applied.\n    :param dims: determines if the signal is 1D, 2D, or 3D. If 3D, then\n                 upsampling occurs in the inner-two dimensions.\n    \"\"\"\n    def __init__(self, channels, use_conv, dims=2, out_channels=None, padding=1):\n        super().__init__()\n        self.channels = channels\n        self.out_channels = out_channels or channels\n        self.use_conv = use_conv\n        self.dims = dims\n        if use_conv:",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:67-95"
+    },
+    "393": {
+        "file_id": 16,
+        "content": "The code defines a class `Upsample` that creates an upsampling layer with optional convolution. It takes `channels`, `use_conv`, and `dims` as input parameters, and initializes the `self.op` operation based on these inputs. If `use_conv` is True, it uses convolution (`conv_nd`) operation; otherwise, it asserts that channels and out_channels are equal and uses average pooling (`avg_pool_nd`) operation. The class also defines a forward function to be used during the forward pass of the network.",
+        "type": "comment"
+    },
+    "394": {
+        "file_id": 16,
+        "content": "            self.conv = conv_nd(dims, self.channels, self.out_channels, 3, padding=padding)\n    def forward(self, x):\n        assert x.shape[1] == self.channels\n        if self.dims == 3:\n            x = F.interpolate(x, (x.shape[2], x.shape[3] * 2, x.shape[4] * 2), mode='nearest')\n        else:\n            x = F.interpolate(x, scale_factor=2, mode='nearest')\n        if self.use_conv:\n            x = self.conv(x)\n        return x\nclass ResBlock(TimestepBlock):\n    \"\"\"\n    A residual block that can optionally change the number of channels.\n    :param channels: the number of input channels.\n    :param emb_channels: the number of timestep embedding channels.\n    :param dropout: the rate of dropout.\n    :param out_channels: if specified, the number of out channels.\n    :param use_conv: if True and out_channels is specified, use a spatial\n        convolution instead of a smaller 1x1 convolution to change the\n        channels in the skip connection.\n    :param dims: determines if the signal is 1D, 2D, or 3D.\n    :param up: if True, use this block for upsampling.",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:96-120"
+    },
+    "395": {
+        "file_id": 16,
+        "content": "This code defines a ResBlock class that is a residual block capable of changing the number of channels. It takes parameters such as channels, emb_channels, dropout, out_channels, use_conv, and dims to define its behavior. The forward function applies interpolation if needed based on dimensions and may apply convolution if specified.",
+        "type": "comment"
+    },
+    "396": {
+        "file_id": 16,
+        "content": "    :param down: if True, use this block for downsampling.\n    :param use_temporal_conv: if True, use the temporal convolution.\n    :param use_image_dataset: if True, the temporal parameters will not be optimized.\n    \"\"\"\n    def __init__(\n        self,\n        channels,\n        emb_channels,\n        dropout,\n        out_channels=None,\n        use_scale_shift_norm=False,\n        dims=2,\n        use_checkpoint=False,\n        use_conv=False,\n        up=False,\n        down=False,\n        use_temporal_conv=False,\n        tempspatial_aware=False\n    ):\n        super().__init__()\n        self.channels = channels\n        self.emb_channels = emb_channels\n        self.dropout = dropout\n        self.out_channels = out_channels or channels\n        self.use_conv = use_conv\n        self.use_checkpoint = use_checkpoint\n        self.use_scale_shift_norm = use_scale_shift_norm\n        self.use_temporal_conv = use_temporal_conv\n        self.in_layers = nn.Sequential(\n            normalization(channels),\n            nn.SiLU(),\n            conv_nd(dims, channels, self.out_channels, 3, padding=1),",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:121-154"
+    },
+    "397": {
+        "file_id": 16,
+        "content": "This code defines a class that initializes an object for a neural network module. The parameters include the number of input and output channels, dropout rate, optional output channels, use of convolution or scale-shift norm, upsampling or downsampling, use of temporal convolution, and spatial awareness. It uses superclass initialization and sets various attributes accordingly.",
+        "type": "comment"
+    },
+    "398": {
+        "file_id": 16,
+        "content": "        )\n        self.updown = up or down\n        if up:\n            self.h_upd = Upsample(channels, False, dims)\n            self.x_upd = Upsample(channels, False, dims)\n        elif down:\n            self.h_upd = Downsample(channels, False, dims)\n            self.x_upd = Downsample(channels, False, dims)\n        else:\n            self.h_upd = self.x_upd = nn.Identity()\n        self.emb_layers = nn.Sequential(\n            nn.SiLU(),\n            nn.Linear(\n                emb_channels,\n                2 * self.out_channels if use_scale_shift_norm else self.out_channels,\n            ),\n        )\n        self.out_layers = nn.Sequential(\n            normalization(self.out_channels),\n            nn.SiLU(),\n            nn.Dropout(p=dropout),\n            zero_module(nn.Conv2d(self.out_channels, self.out_channels, 3, padding=1)),\n        )\n        if self.out_channels == channels:\n            self.skip_connection = nn.Identity()\n        elif use_conv:\n            self.skip_connection = conv_nd(dims, channels, self.out_channels, 3, padding=1)",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:155-185"
+    },
+    "399": {
+        "file_id": 16,
+        "content": "This code initializes the OpenAI Model 3D class with upsampling or downsampling layers depending on the 'up' or 'down' flag, an embedding layer, output layers, and a skip connection based on the out_channels and use_conv parameters. It also handles cases when self.out_channels is equal to channels or if use_conv is True.",
+        "type": "comment"
+    }
+}

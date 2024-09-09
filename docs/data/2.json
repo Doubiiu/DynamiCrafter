@@ -1,0 +1,549 @@
+{
+    "200": {
+        "file_id": 10,
+        "content": "                                                    quantize_denoised=quantize_x0,\n                                                    mask=mask, x0=x0,\n                                                    ddim_use_original_steps=False,\n                                                    noise_dropout=noise_dropout,\n                                                    temperature=temperature,\n                                                    score_corrector=score_corrector,\n                                                    corrector_kwargs=corrector_kwargs,\n                                                    x_T=x_T,\n                                                    log_every_t=log_every_t,\n                                                    unconditional_guidance_scale=unconditional_guidance_scale,\n                                                    unconditional_conditioning=unconditional_conditioning,\n                                                    verbose=verbose,\n                                                    precision=precision,",
+        "type": "code",
+        "location": "/lvdm/models/samplers/ddim_multiplecond.py:111-123"
+    },
+    "201": {
+        "file_id": 10,
+        "content": "This code is calling the DDIM sampler function with multiple conditions. The function takes inputs like quantized denoised sample, mask, original noise image, temperature, score corrector, corrector kwargs, final output x_T, logging frequency, unconditional guidance scale, unconditional conditioning, verbose mode, and precision for the computation.",
+        "type": "comment"
+    },
+    "202": {
+        "file_id": 10,
+        "content": "                                                    fs=fs,\n                                                    **kwargs)\n        return samples, intermediates\n    @torch.no_grad()\n    def ddim_sampling(self, cond, shape,\n                      x_T=None, ddim_use_original_steps=False,\n                      callback=None, timesteps=None, quantize_denoised=False,\n                      mask=None, x0=None, img_callback=None, log_every_t=100,\n                      temperature=1., noise_dropout=0., score_corrector=None, corrector_kwargs=None,\n                      unconditional_guidance_scale=1., unconditional_conditioning=None, verbose=True,precision=None,fs=None,\n                      **kwargs):\n        device = self.model.betas.device        \n        b = shape[0]\n        if x_T is None:\n            img = torch.randn(shape, device=device)\n        else:\n            img = x_T\n        if precision is not None:\n            if precision == 16:\n                img = img.to(dtype=torch.float16)\n        if timesteps is None:",
+        "type": "code",
+        "location": "/lvdm/models/samplers/ddim_multiplecond.py:124-147"
+    },
+    "203": {
+        "file_id": 10,
+        "content": "The provided code is the definition of a function called \"ddim_sampling\" for creating samples using the DDIM (Denoising Diffusion Probabilistic Models) algorithm. This function takes conditional input, shape, and other optional arguments to generate denoised images. It also has parameters for precision, timesteps, and temperature control.",
+        "type": "comment"
+    },
+    "204": {
+        "file_id": 10,
+        "content": "            timesteps = self.ddpm_num_timesteps if ddim_use_original_steps else self.ddim_timesteps\n        elif timesteps is not None and not ddim_use_original_steps:\n            subset_end = int(min(timesteps / self.ddim_timesteps.shape[0], 1) * self.ddim_timesteps.shape[0]) - 1\n            timesteps = self.ddim_timesteps[:subset_end]\n        intermediates = {'x_inter': [img], 'pred_x0': [img]}\n        time_range = reversed(range(0,timesteps)) if ddim_use_original_steps else np.flip(timesteps)\n        total_steps = timesteps if ddim_use_original_steps else timesteps.shape[0]\n        if verbose:\n            iterator = tqdm(time_range, desc='DDIM Sampler', total=total_steps)\n        else:\n            iterator = time_range\n        clean_cond = kwargs.pop(\"clean_cond\", False)\n        for i, step in enumerate(iterator):\n            index = total_steps - i - 1\n            ts = torch.full((b,), step, device=device, dtype=torch.long)\n            ## use mask to blend noised original latent (img_orig) & new sampled latent (img)",
+        "type": "code",
+        "location": "/lvdm/models/samplers/ddim_multiplecond.py:148-166"
+    },
+    "205": {
+        "file_id": 10,
+        "content": "The code determines the timesteps for the DDIM sampler, and initializes intermediates and time_range variables. It then creates a progress bar (if verbose) or an iterator for the specified number of timesteps. Finally, it prepares a tensor with step values and uses it to blend noised original latent and new sampled latents.",
+        "type": "comment"
+    },
+    "206": {
+        "file_id": 10,
+        "content": "            if mask is not None:\n                assert x0 is not None\n                if clean_cond:\n                    img_orig = x0\n                else:\n                    img_orig = self.model.q_sample(x0, ts)  # TODO: deterministic forward pass? <ddim inversion>\n                img = img_orig * mask + (1. - mask) * img # keep original & modify use img\n            outs = self.p_sample_ddim(img, cond, ts, index=index, use_original_steps=ddim_use_original_steps,\n                                      quantize_denoised=quantize_denoised, temperature=temperature,\n                                      noise_dropout=noise_dropout, score_corrector=score_corrector,\n                                      corrector_kwargs=corrector_kwargs,\n                                      unconditional_guidance_scale=unconditional_guidance_scale,\n                                      unconditional_conditioning=unconditional_conditioning,\n                                      mask=mask,x0=x0,fs=fs,\n                                      **kwargs)",
+        "type": "code",
+        "location": "/lvdm/models/samplers/ddim_multiplecond.py:167-182"
+    },
+    "207": {
+        "file_id": 10,
+        "content": "The code checks if mask is not None and asserts that x0 is not also None. If clean_cond is True, it assigns the original image (x0) to img_orig. Otherwise, it runs a deterministic forward pass on model using q_sample method for x0 and ts. Then it calculates the final image (img) by combining img_orig and existing img with mask values. Finally, it calls p_sample_ddim method with calculated inputs and stores the results in outs variable.",
+        "type": "comment"
+    },
+    "208": {
+        "file_id": 10,
+        "content": "            img, pred_x0 = outs\n            if callback: callback(i)\n            if img_callback: img_callback(pred_x0, i)\n            if index % log_every_t == 0 or index == total_steps - 1:\n                intermediates['x_inter'].append(img)\n                intermediates['pred_x0'].append(pred_x0)\n        return img, intermediates\n    @torch.no_grad()\n    def p_sample_ddim(self, x, c, t, index, repeat_noise=False, use_original_steps=False, quantize_denoised=False,\n                      temperature=1., noise_dropout=0., score_corrector=None, corrector_kwargs=None,\n                      unconditional_guidance_scale=1., unconditional_conditioning=None,\n                      uc_type=None, cfg_img=None,mask=None,x0=None, **kwargs):\n        b, *_, device = *x.shape, x.device\n        if x.dim() == 5:\n            is_video = True\n        else:\n            is_video = False\n        if cfg_img is None:\n            cfg_img = unconditional_guidance_scale\n        unconditional_conditioning_img_nonetext = kwargs['unconditional_conditioning_img_nonetext']",
+        "type": "code",
+        "location": "/lvdm/models/samplers/ddim_multiplecond.py:186-209"
+    },
+    "209": {
+        "file_id": 10,
+        "content": "This code defines a p_sample_ddim function that performs denoising diffusion probabilistic models for generating images. It takes input x, c, t, index, and various other parameters, returns the generated image and intermediates. The function checks if the index is appropriate for logging intermediates and appends to intermediates list 'x_inter' and 'pred_x0'. If cfg_img is None, it sets cfg_img as unconditional_guidance_scale. This function also determines if the input x is of dimension 5 indicating a video.",
+        "type": "comment"
+    },
+    "210": {
+        "file_id": 10,
+        "content": "        if unconditional_conditioning is None or unconditional_guidance_scale == 1.:\n            e_t = self.model.apply_model(x, t, c, **kwargs) # unet denoiser\n        else:\n            ### with unconditional condition\n            e_t_cond = self.model.apply_model(x, t, c, **kwargs)\n            e_t_uncond = self.model.apply_model(x, t, unconditional_conditioning, **kwargs)\n            e_t_uncond_img = self.model.apply_model(x, t, unconditional_conditioning_img_nonetext, **kwargs)\n            # text cfg\n            e_t = e_t_uncond + cfg_img * (e_t_uncond_img - e_t_uncond) + unconditional_guidance_scale * (e_t_cond - e_t_uncond_img)\n        if self.model.parameterization == \"v\":\n            e_t = self.model.predict_eps_from_z_and_v(x, t, e_t)\n        if score_corrector is not None:\n            assert self.model.parameterization == \"eps\"\n            e_t = score_corrector.modify_score(self.model, e_t, x, t, c, **corrector_kwargs)\n        alphas = self.model.alphas_cumprod if use_original_steps else self.ddim_alphas",
+        "type": "code",
+        "location": "/lvdm/models/samplers/ddim_multiplecond.py:212-230"
+    },
+    "211": {
+        "file_id": 10,
+        "content": "This code applies the model to generate an output based on conditional and unconditional inputs, with possible modification of scores using a score corrector. It also adjusts the output based on the model's parameterization setting.",
+        "type": "comment"
+    },
+    "212": {
+        "file_id": 10,
+        "content": "        alphas_prev = self.model.alphas_cumprod_prev if use_original_steps else self.ddim_alphas_prev\n        sqrt_one_minus_alphas = self.model.sqrt_one_minus_alphas_cumprod if use_original_steps else self.ddim_sqrt_one_minus_alphas\n        sigmas = self.ddim_sigmas_for_original_num_steps if use_original_steps else self.ddim_sigmas\n        # select parameters corresponding to the currently considered timestep\n        if is_video:\n            size = (b, 1, 1, 1, 1)\n        else:\n            size = (b, 1, 1, 1)\n        a_t = torch.full(size, alphas[index], device=device)\n        a_prev = torch.full(size, alphas_prev[index], device=device)\n        sigma_t = torch.full(size, sigmas[index], device=device)\n        sqrt_one_minus_at = torch.full(size, sqrt_one_minus_alphas[index],device=device)\n        # current prediction for x_0\n        pred_x0 = (x - sqrt_one_minus_at * e_t) / a_t.sqrt()\n        if quantize_denoised:\n            pred_x0, _, *_ = self.model.first_stage_model.quantize(pred_x0)\n        # direction pointing to x_t",
+        "type": "code",
+        "location": "/lvdm/models/samplers/ddim_multiplecond.py:231-250"
+    },
+    "213": {
+        "file_id": 10,
+        "content": "This code is assigning variables for DDIM sampler's timestep-specific parameters and creating a prediction for the initial frame x0. It first selects alphas, alpha_prev, sqrt_one_minus_alphas, and sigmas based on use_original_steps and considers the current index. For video input, it creates a size of (b, 1, 1, 1, 1) while for other inputs, it uses (b, 1, 1, 1). It then initializes variables a_t, a_prev, sigma_t, and sqrt_one_minus_at with the respective indices. After that, it computes pred_x0 using the formula (x - sqrt_one_minus_at * e_t) / a_t.sqrt(). Finally, if quantize_denoised is True, it quantizes the prediction using first_stage_model's quantize method.",
+        "type": "comment"
+    },
+    "214": {
+        "file_id": 10,
+        "content": "        dir_xt = (1. - a_prev - sigma_t**2).sqrt() * e_t\n        noise = sigma_t * noise_like(x.shape, device, repeat_noise) * temperature\n        if noise_dropout > 0.:\n            noise = torch.nn.functional.dropout(noise, p=noise_dropout)\n        x_prev = a_prev.sqrt() * pred_x0 + dir_xt + noise\n        return x_prev, pred_x0\n    @torch.no_grad()\n    def decode(self, x_latent, cond, t_start, unconditional_guidance_scale=1.0, unconditional_conditioning=None,\n               use_original_steps=False, callback=None):\n        timesteps = np.arange(self.ddpm_num_timesteps) if use_original_steps else self.ddim_timesteps\n        timesteps = timesteps[:t_start]\n        time_range = np.flip(timesteps)\n        total_steps = timesteps.shape[0]\n        print(f\"Running DDIM Sampling with {total_steps} timesteps\")\n        iterator = tqdm(time_range, desc='Decoding image', total=total_steps)\n        x_dec = x_latent\n        for i, step in enumerate(iterator):\n            index = total_steps - i - 1\n            ts = torch.full((x_latent.shape[0],), step, device=x_latent.device, dtype=torch.long)",
+        "type": "code",
+        "location": "/lvdm/models/samplers/ddim_multiplecond.py:251-276"
+    },
+    "215": {
+        "file_id": 10,
+        "content": "This code is a part of the DDIM multiple condition sampler function in DynamiCrafter/lvdm/models/samplers/ddim_multiplecond.py. It initializes variables and iterates over timesteps, decoding input latent vector x_latent at each time step using DDIM sampling method. The code also includes a progress bar for the decoding process.",
+        "type": "comment"
+    },
+    "216": {
+        "file_id": 10,
+        "content": "            x_dec, _ = self.p_sample_ddim(x_dec, cond, ts, index=index, use_original_steps=use_original_steps,\n                                          unconditional_guidance_scale=unconditional_guidance_scale,\n                                          unconditional_conditioning=unconditional_conditioning)\n            if callback: callback(i)\n        return x_dec\n    @torch.no_grad()\n    def stochastic_encode(self, x0, t, use_original_steps=False, noise=None):\n        # fast, but does not allow for exact reconstruction\n        # t serves as an index to gather the correct alphas\n        if use_original_steps:\n            sqrt_alphas_cumprod = self.sqrt_alphas_cumprod\n            sqrt_one_minus_alphas_cumprod = self.sqrt_one_minus_alphas_cumprod\n        else:\n            sqrt_alphas_cumprod = torch.sqrt(self.ddim_alphas)\n            sqrt_one_minus_alphas_cumprod = self.ddim_sqrt_one_minus_alphas\n        if noise is None:\n            noise = torch.randn_like(x0)\n        return (extract_into_tensor(sqrt_alphas_cumprod, t, x0.shape) * x0 +",
+        "type": "code",
+        "location": "/lvdm/models/samplers/ddim_multiplecond.py:277-296"
+    },
+    "217": {
+        "file_id": 10,
+        "content": "This code defines a function that performs stochastic encoding using the DDIM sampler with multiple conditions. The function uses the provided `x0`, `t`, and optional `noise` inputs to generate the encoded output. It checks if `use_original_steps` is True, and if so, uses precomputed `sqrt_alphas_cumprod` and `sqrt_one_minus_alphas_cumprod`. Otherwise, it computes `sqrt_alphas_cumprod` based on the DDIM alpha values. It then applies a noise term to generate the encoded output by multiplying the extracted `sqrt_alphas_cumprod` with `x0` and adding them together. The function also provides an optional callback that can be used to monitor progress during the encoding process.",
+        "type": "comment"
+    },
+    "218": {
+        "file_id": 10,
+        "content": "                extract_into_tensor(sqrt_one_minus_alphas_cumprod, t, x0.shape) * noise)",
+        "type": "code",
+        "location": "/lvdm/models/samplers/ddim_multiplecond.py:297-297"
+    },
+    "219": {
+        "file_id": 10,
+        "content": "This code block is multiplying the square root of one minus alphas' cumulative product by the noise and assigning it to x0. This operation helps in generating samples from a diffusion model.",
+        "type": "comment"
+    },
+    "220": {
+        "file_id": 11,
+        "content": "/lvdm/models/utils_diffusion.py",
+        "type": "filepath"
+    },
+    "221": {
+        "file_id": 11,
+        "content": "This code creates timestep embeddings and diffusion schedules for DDIM or DDPG methods, enabling efficient deep learning models. It also generates betas values to prevent singularities in the diffusion process.",
+        "type": "summary"
+    },
+    "222": {
+        "file_id": 11,
+        "content": "import math\nimport numpy as np\nimport torch\nimport torch.nn.functional as F\nfrom einops import repeat\ndef timestep_embedding(timesteps, dim, max_period=10000, repeat_only=False):\n    \"\"\"\n    Create sinusoidal timestep embeddings.\n    :param timesteps: a 1-D Tensor of N indices, one per batch element.\n                      These may be fractional.\n    :param dim: the dimension of the output.\n    :param max_period: controls the minimum frequency of the embeddings.\n    :return: an [N x dim] Tensor of positional embeddings.\n    \"\"\"\n    if not repeat_only:\n        half = dim // 2\n        freqs = torch.exp(\n            -math.log(max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half\n        ).to(device=timesteps.device)\n        args = timesteps[:, None].float() * freqs[None]\n        embedding = torch.cat([torch.cos(args), torch.sin(args)], dim=-1)\n        if dim % 2:\n            embedding = torch.cat([embedding, torch.zeros_like(embedding[:, :1])], dim=-1)\n    else:\n        embedding = repeat(timesteps, 'b -> b d', d=dim)",
+        "type": "code",
+        "location": "/lvdm/models/utils_diffusion.py:1-27"
+    },
+    "223": {
+        "file_id": 11,
+        "content": "This function generates timestep embeddings for use in diffusion models. It supports sinusoidal embeddings (default) or repeating embeddings based on input timesteps. The sinusoidal embeddings are created using sine and cosine functions, while the repeat option simply replicates the input timesteps 'd' times.",
+        "type": "comment"
+    },
+    "224": {
+        "file_id": 11,
+        "content": "    return embedding\ndef make_beta_schedule(schedule, n_timestep, linear_start=1e-4, linear_end=2e-2, cosine_s=8e-3):\n    if schedule == \"linear\":\n        betas = (\n                torch.linspace(linear_start ** 0.5, linear_end ** 0.5, n_timestep, dtype=torch.float64) ** 2\n        )\n    elif schedule == \"cosine\":\n        timesteps = (\n                torch.arange(n_timestep + 1, dtype=torch.float64) / n_timestep + cosine_s\n        )\n        alphas = timesteps / (1 + cosine_s) * np.pi / 2\n        alphas = torch.cos(alphas).pow(2)\n        alphas = alphas / alphas[0]\n        betas = 1 - alphas[1:] / alphas[:-1]\n        betas = np.clip(betas, a_min=0, a_max=0.999)\n    elif schedule == \"sqrt_linear\":\n        betas = torch.linspace(linear_start, linear_end, n_timestep, dtype=torch.float64)\n    elif schedule == \"sqrt\":\n        betas = torch.linspace(linear_start, linear_end, n_timestep, dtype=torch.float64) ** 0.5\n    else:\n        raise ValueError(f\"schedule '{schedule}' unknown.\")\n    return betas.numpy()\ndef make_ddim_timesteps(ddim_discr_method, num_ddim_timesteps, num_ddpm_timesteps, verbose=True):",
+        "type": "code",
+        "location": "/lvdm/models/utils_diffusion.py:28-56"
+    },
+    "225": {
+        "file_id": 11,
+        "content": "This code defines a function `make_beta_schedule` that generates a schedule of beta values for diffusion models. The function takes in the scheduling method (linear, cosine, sqrt_linear, or sqrt), number of timesteps, and optional parameters for linear and cosine schedules. It returns an array of beta values representing the schedule.\n\nThe code also includes a `make_ddim_timesteps` function which takes in the discretization method (either DDIM or DDPG), the number of DDIM timesteps, and the number of DDPM timesteps. It generates the corresponding timesteps for the chosen method.\n\nThese functions are used to create a diffusion model schedule and generate timesteps for the model, which can be utilized in various deep learning tasks.",
+        "type": "comment"
+    },
+    "226": {
+        "file_id": 11,
+        "content": "    if ddim_discr_method == 'uniform':\n        c = num_ddpm_timesteps // num_ddim_timesteps\n        ddim_timesteps = np.asarray(list(range(0, num_ddpm_timesteps, c)))\n    elif ddim_discr_method == 'quad':\n        ddim_timesteps = ((np.linspace(0, np.sqrt(num_ddpm_timesteps * .8), num_ddim_timesteps)) ** 2).astype(int)\n    else:\n        raise NotImplementedError(f'There is no ddim discretization method called \"{ddim_discr_method}\"')\n    # assert ddim_timesteps.shape[0] == num_ddim_timesteps\n    # add one to get the final alpha values right (the ones from first scale to data during sampling)\n    steps_out = ddim_timesteps + 1\n    if verbose:\n        print(f'Selected timesteps for ddim sampler: {steps_out}')\n    return steps_out\ndef make_ddim_sampling_parameters(alphacums, ddim_timesteps, eta, verbose=True):\n    # select alphas for computing the variance schedule\n    # print(f'ddim_timesteps={ddim_timesteps}, len_alphacums={len(alphacums)}')\n    alphas = alphacums[ddim_timesteps]\n    alphas_prev = np.asarray([alphacums[0]] + alphacums[ddim_timesteps[:-1]].tolist())",
+        "type": "code",
+        "location": "/lvdm/models/utils_diffusion.py:57-77"
+    },
+    "227": {
+        "file_id": 11,
+        "content": "The code determines the timesteps for DDIM sampling, based on the specified discretization method. If the method is 'uniform', it divides the number of DDPM timesteps by the number of DDIM timesteps to create a uniformly spaced array of timesteps. If the method is 'quad', it creates evenly spaced quadratic roots from 0 to the square root of 0.8 times the product of the number of DDPM and DDIM timesteps, then squares the results to get the final timesteps. The code also checks for unimplemented methods and raises a NotImplementedError if encountered.",
+        "type": "comment"
+    },
+    "228": {
+        "file_id": 11,
+        "content": "    # according the the formula provided in https://arxiv.org/abs/2010.02502\n    sigmas = eta * np.sqrt((1 - alphas_prev) / (1 - alphas) * (1 - alphas / alphas_prev))\n    if verbose:\n        print(f'Selected alphas for ddim sampler: a_t: {alphas}; a_(t-1): {alphas_prev}')\n        print(f'For the chosen value of eta, which is {eta}, '\n              f'this results in the following sigma_t schedule for ddim sampler {sigmas}')\n    return sigmas, alphas, alphas_prev\ndef betas_for_alpha_bar(num_diffusion_timesteps, alpha_bar, max_beta=0.999):\n    \"\"\"\n    Create a beta schedule that discretizes the given alpha_t_bar function,\n    which defines the cumulative product of (1-beta) over time from t = [0,1].\n    :param num_diffusion_timesteps: the number of betas to produce.\n    :param alpha_bar: a lambda that takes an argument t from 0 to 1 and\n                      produces the cumulative product of (1-beta) up to that\n                      part of the diffusion process.\n    :param max_beta: the maximum beta to use; use values lower than 1 to",
+        "type": "code",
+        "location": "/lvdm/models/utils_diffusion.py:79-96"
+    },
+    "229": {
+        "file_id": 11,
+        "content": "This function calculates sigmas for ddim sampler using a formula from the given reference. It also prints selected alphas and resulting sigma_t schedule for ddim sampler if verbose is True. The betas_for_alpha_bar function creates a beta schedule by discretizing the alpha_t_bar function, which defines the cumulative product of (1-beta) over time from t = [0,1].",
+        "type": "comment"
+    },
+    "230": {
+        "file_id": 11,
+        "content": "                     prevent singularities.\n    \"\"\"\n    betas = []\n    for i in range(num_diffusion_timesteps):\n        t1 = i / num_diffusion_timesteps\n        t2 = (i + 1) / num_diffusion_timesteps\n        betas.append(min(1 - alpha_bar(t2) / alpha_bar(t1), max_beta))\n    return np.array(betas)",
+        "type": "code",
+        "location": "/lvdm/models/utils_diffusion.py:97-104"
+    },
+    "231": {
+        "file_id": 11,
+        "content": "This function generates betas values for the diffusion process, preventing singularities. It iterates through timesteps, calculates t1 and t2 values, then appends the minimum value of (1 - alpha_bar(t2) / alpha_bar(t1)) and max_beta to the list of betas. Finally, it returns a numpy array of these betas values.",
+        "type": "comment"
+    },
+    "232": {
+        "file_id": 12,
+        "content": "/lvdm/modules/attention.py",
+        "type": "filepath"
+    },
+    "233": {
+        "file_id": 12,
+        "content": "The code introduces memory-efficient components for multi-head attention in transformer models, with support for causal/self-attention and sequential block processing. It also includes a SpatialSelfAttention class for CV tasks using GEGLU and FeedForward.",
+        "type": "summary"
+    },
+    "234": {
+        "file_id": 12,
+        "content": "import torch\nfrom torch import nn, einsum\nimport torch.nn.functional as F\nfrom einops import rearrange, repeat\nfrom functools import partial\ntry:\n    import xformers\n    import xformers.ops\n    XFORMERS_IS_AVAILBLE = True\nexcept:\n    XFORMERS_IS_AVAILBLE = False\nfrom lvdm.common import (\n    checkpoint,\n    exists,\n    default,\n)\nfrom lvdm.basics import zero_module\nclass RelativePosition(nn.Module):\n    \"\"\" https://github.com/evelinehong/Transformer_Relative_Position_PyTorch/blob/master/relative_position.py \"\"\"\n    def __init__(self, num_units, max_relative_position):\n        super().__init__()\n        self.num_units = num_units\n        self.max_relative_position = max_relative_position\n        self.embeddings_table = nn.Parameter(torch.Tensor(max_relative_position * 2 + 1, num_units))\n        nn.init.xavier_uniform_(self.embeddings_table)\n    def forward(self, length_q, length_k):\n        device = self.embeddings_table.device\n        range_vec_q = torch.arange(length_q, device=device)\n        range_vec_k = torch.arange(length_k, device=device)",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:1-33"
+    },
+    "235": {
+        "file_id": 12,
+        "content": "This code defines a module called \"RelativePosition\" which initializes an embedding table for relative positioning. It takes in the number of units and maximum relative position as parameters. The forward function calculates the embeddings based on input sequence lengths, q and k.",
+        "type": "comment"
+    },
+    "236": {
+        "file_id": 12,
+        "content": "        distance_mat = range_vec_k[None, :] - range_vec_q[:, None]\n        distance_mat_clipped = torch.clamp(distance_mat, -self.max_relative_position, self.max_relative_position)\n        final_mat = distance_mat_clipped + self.max_relative_position\n        final_mat = final_mat.long()\n        embeddings = self.embeddings_table[final_mat]\n        return embeddings\nclass CrossAttention(nn.Module):\n    def __init__(self, query_dim, context_dim=None, heads=8, dim_head=64, dropout=0., \n                 relative_position=False, temporal_length=None, video_length=None, image_cross_attention=False, image_cross_attention_scale=1.0, image_cross_attention_scale_learnable=False, text_context_len=77):\n        super().__init__()\n        inner_dim = dim_head * heads\n        context_dim = default(context_dim, query_dim)\n        self.scale = dim_head**-0.5\n        self.heads = heads\n        self.dim_head = dim_head\n        self.to_q = nn.Linear(query_dim, inner_dim, bias=False)\n        self.to_k = nn.Linear(context_dim, inner_dim, bias=False)",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:34-54"
+    },
+    "237": {
+        "file_id": 12,
+        "content": "This code defines a class named \"CrossAttention\" which is a subclass of nn.Module and uses attention mechanism for cross-modal attention. It takes query and context embeddings as input, computes the attention weights based on their relative distances, and produces attention-weighted summed embeddings as output. The maximum relative position can be controlled by the max_relative_position variable.",
+        "type": "comment"
+    },
+    "238": {
+        "file_id": 12,
+        "content": "        self.to_v = nn.Linear(context_dim, inner_dim, bias=False)\n        self.to_out = nn.Sequential(nn.Linear(inner_dim, query_dim), nn.Dropout(dropout))\n        self.relative_position = relative_position\n        if self.relative_position:\n            assert(temporal_length is not None)\n            self.relative_position_k = RelativePosition(num_units=dim_head, max_relative_position=temporal_length)\n            self.relative_position_v = RelativePosition(num_units=dim_head, max_relative_position=temporal_length)\n        else:\n            ## only used for spatial attention, while NOT for temporal attention\n            if XFORMERS_IS_AVAILBLE and temporal_length is None:\n                self.forward = self.efficient_forward\n        self.video_length = video_length\n        self.image_cross_attention = image_cross_attention\n        self.image_cross_attention_scale = image_cross_attention_scale\n        self.text_context_len = text_context_len\n        self.image_cross_attention_scale_learnable = image_cross_attention_scale_learnable",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:55-73"
+    },
+    "239": {
+        "file_id": 12,
+        "content": "This code initializes a module for attention mechanisms. It includes a linear layer, dropout, and optional relative position layers depending on the input type (spatial or temporal). The code also sets parameters like video length, image cross-attention settings, and text context length. If XFORMERS library is available and temporal length is None, it assigns an efficient forward function for spatial attention.",
+        "type": "comment"
+    },
+    "240": {
+        "file_id": 12,
+        "content": "        if self.image_cross_attention:\n            self.to_k_ip = nn.Linear(context_dim, inner_dim, bias=False)\n            self.to_v_ip = nn.Linear(context_dim, inner_dim, bias=False)\n            if image_cross_attention_scale_learnable:\n                self.register_parameter('alpha', nn.Parameter(torch.tensor(0.)) )\n    def forward(self, x, context=None, mask=None):\n        spatial_self_attn = (context is None)\n        k_ip, v_ip, out_ip = None, None, None\n        h = self.heads\n        q = self.to_q(x)\n        context = default(context, x)\n        if self.image_cross_attention and not spatial_self_attn:\n            context, context_image = context[:,:self.text_context_len,:], context[:,self.text_context_len:,:]\n            k = self.to_k(context)\n            v = self.to_v(context)\n            k_ip = self.to_k_ip(context_image)\n            v_ip = self.to_v_ip(context_image)\n        else:\n            if not spatial_self_attn:\n                context = context[:,:self.text_context_len,:]\n            k = self.to_k(context)",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:74-98"
+    },
+    "241": {
+        "file_id": 12,
+        "content": "This code defines a module for attention mechanism, where it checks if image cross-attention is enabled. If enabled and spatial self-attention is not used, it performs cross-attention between text and image contexts. It initializes the necessary linear layers and registers an optional learnable parameter 'alpha'. It also handles default inputs for context and mask parameters.",
+        "type": "comment"
+    },
+    "242": {
+        "file_id": 12,
+        "content": "            v = self.to_v(context)\n        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=h), (q, k, v))\n        sim = torch.einsum('b i d, b j d -> b i j', q, k) * self.scale\n        if self.relative_position:\n            len_q, len_k, len_v = q.shape[1], k.shape[1], v.shape[1]\n            k2 = self.relative_position_k(len_q, len_k)\n            sim2 = einsum('b t d, t s d -> b t s', q, k2) * self.scale # TODO check \n            sim += sim2\n        del k\n        if exists(mask):\n            ## feasible for causal attention mask only\n            max_neg_value = -torch.finfo(sim.dtype).max\n            mask = repeat(mask, 'b i j -> (b h) i j', h=h)\n            sim.masked_fill_(~(mask>0.5), max_neg_value)\n        # attention, what we cannot get enough of\n        sim = sim.softmax(dim=-1)\n        out = torch.einsum('b i j, b j d -> b i d', sim, v)\n        if self.relative_position:\n            v2 = self.relative_position_v(len_q, len_v)\n            out2 = einsum('b t s, t s d -> b t d', sim, v2) # TODO check",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:99-123"
+    },
+    "243": {
+        "file_id": 12,
+        "content": "This code block performs multi-head self-attention with relative position information and optional causal attention masking. It first rearranges the query, key, and value matrices to match the required dimensions. Then it calculates the scaled dot product between the rearranged key and query matrices. If relative position is enabled, it adds another scaled dot product calculated from the relative position-aware key matrix. The attention scores are then computed by normalizing the combined similarity scores using softmax function. Finally, the value matrix is weighted by the computed attention scores to produce the output.",
+        "type": "comment"
+    },
+    "244": {
+        "file_id": 12,
+        "content": "            out += out2\n        out = rearrange(out, '(b h) n d -> b n (h d)', h=h)\n        ## for image cross-attention\n        if k_ip is not None:\n            k_ip, v_ip = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=h), (k_ip, v_ip))\n            sim_ip =  torch.einsum('b i d, b j d -> b i j', q, k_ip) * self.scale\n            del k_ip\n            sim_ip = sim_ip.softmax(dim=-1)\n            out_ip = torch.einsum('b i j, b j d -> b i d', sim_ip, v_ip)\n            out_ip = rearrange(out_ip, '(b h) n d -> b n (h d)', h=h)\n        if out_ip is not None:\n            if self.image_cross_attention_scale_learnable:\n                out = out + self.image_cross_attention_scale * out_ip * (torch.tanh(self.alpha)+1)\n            else:\n                out = out + self.image_cross_attention_scale * out_ip\n        return self.to_out(out)\n    def efficient_forward(self, x, context=None, mask=None):\n        spatial_self_attn = (context is None)\n        k_ip, v_ip, out_ip = None, None, None\n        q = self.to_q(x)",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:124-150"
+    },
+    "245": {
+        "file_id": 12,
+        "content": "This code performs multi-head attention, with the option to include image cross-attention. It combines query and key-value pairs into a single output tensor, then rearranges the dimensions for further processing. If image cross-attention is enabled, it scales and adds the image cross-attention results accordingly. Finally, it passes the result through a transformation function before returning it.",
+        "type": "comment"
+    },
+    "246": {
+        "file_id": 12,
+        "content": "        context = default(context, x)\n        if self.image_cross_attention and not spatial_self_attn:\n            context, context_image = context[:,:self.text_context_len,:], context[:,self.text_context_len:,:]\n            k = self.to_k(context)\n            v = self.to_v(context)\n            k_ip = self.to_k_ip(context_image)\n            v_ip = self.to_v_ip(context_image)\n        else:\n            if not spatial_self_attn:\n                context = context[:,:self.text_context_len,:]\n            k = self.to_k(context)\n            v = self.to_v(context)\n        b, _, _ = q.shape\n        q, k, v = map(\n            lambda t: t.unsqueeze(3)\n            .reshape(b, t.shape[1], self.heads, self.dim_head)\n            .permute(0, 2, 1, 3)\n            .reshape(b * self.heads, t.shape[1], self.dim_head)\n            .contiguous(),\n            (q, k, v),\n        )\n        # actually compute the attention, what we cannot get enough of\n        out = xformers.ops.memory_efficient_attention(q, k, v, attn_bias=None, op=None)",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:151-175"
+    },
+    "247": {
+        "file_id": 12,
+        "content": "This code splits the context into text and image parts if the `image_cross_attention` flag is set, then transforms and reshapes the query (q), key (k), and value (v) tensors for memory-efficient attention computation using XFormers library's `memory_efficient_attention()`.",
+        "type": "comment"
+    },
+    "248": {
+        "file_id": 12,
+        "content": "        ## for image cross-attention\n        if k_ip is not None:\n            k_ip, v_ip = map(\n                lambda t: t.unsqueeze(3)\n                .reshape(b, t.shape[1], self.heads, self.dim_head)\n                .permute(0, 2, 1, 3)\n                .reshape(b * self.heads, t.shape[1], self.dim_head)\n                .contiguous(),\n                (k_ip, v_ip),\n            )\n            out_ip = xformers.ops.memory_efficient_attention(q, k_ip, v_ip, attn_bias=None, op=None)\n            out_ip = (\n                out_ip.unsqueeze(0)\n                .reshape(b, self.heads, out.shape[1], self.dim_head)\n                .permute(0, 2, 1, 3)\n                .reshape(b, out.shape[1], self.heads * self.dim_head)\n            )\n        if exists(mask):\n            raise NotImplementedError\n        out = (\n            out.unsqueeze(0)\n            .reshape(b, self.heads, out.shape[1], self.dim_head)\n            .permute(0, 2, 1, 3)\n            .reshape(b, out.shape[1], self.heads * self.dim_head)\n        )\n        if out_ip is not None:",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:177-203"
+    },
+    "249": {
+        "file_id": 12,
+        "content": "This code is performing multi-head attention for an image-based model. It handles cross-attention when `k_ip` is not None, and reshapes tensors for efficient memory usage. If a mask exists, it raises a NotImplementedError. Finally, it reshapes the output tensor for the final result.",
+        "type": "comment"
+    },
+    "250": {
+        "file_id": 12,
+        "content": "            if self.image_cross_attention_scale_learnable:\n                out = out + self.image_cross_attention_scale * out_ip * (torch.tanh(self.alpha)+1)\n            else:\n                out = out + self.image_cross_attention_scale * out_ip\n        return self.to_out(out)\nclass BasicTransformerBlock(nn.Module):\n    def __init__(self, dim, n_heads, d_head, dropout=0., context_dim=None, gated_ff=True, checkpoint=True,\n                disable_self_attn=False, attention_cls=None, video_length=None, image_cross_attention=False, image_cross_attention_scale=1.0, image_cross_attention_scale_learnable=False, text_context_len=77):\n        super().__init__()\n        attn_cls = CrossAttention if attention_cls is None else attention_cls\n        self.disable_self_attn = disable_self_attn\n        self.attn1 = attn_cls(query_dim=dim, heads=n_heads, dim_head=d_head, dropout=dropout,\n            context_dim=context_dim if self.disable_self_attn else None)\n        self.ff = FeedForward(dim, dropout=dropout, glu=gated_ff)",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:204-221"
+    },
+    "251": {
+        "file_id": 12,
+        "content": "The code defines a BasicTransformerBlock class with parameters dim, n_heads, d_head, dropout, context_dim, gated_ff, checkpoint, disable_self_attn, attention_cls, video_length, image_cross_attention, image_cross_attention_scale, and image_cross_attention_scale_learnable. It initializes an instance of a CrossAttention class (or specified attention_cls) as attn1 for self-attention or cross-attention, and a FeedForward layer as ff for the feed forward network.",
+        "type": "comment"
+    },
+    "252": {
+        "file_id": 12,
+        "content": "        self.attn2 = attn_cls(query_dim=dim, context_dim=context_dim, heads=n_heads, dim_head=d_head, dropout=dropout, video_length=video_length, image_cross_attention=image_cross_attention, image_cross_attention_scale=image_cross_attention_scale, image_cross_attention_scale_learnable=image_cross_attention_scale_learnable,text_context_len=text_context_len)\n        self.image_cross_attention = image_cross_attention\n        self.norm1 = nn.LayerNorm(dim)\n        self.norm2 = nn.LayerNorm(dim)\n        self.norm3 = nn.LayerNorm(dim)\n        self.checkpoint = checkpoint\n    def forward(self, x, context=None, mask=None, **kwargs):\n        ## implementation tricks: because checkpointing doesn't support non-tensor (e.g. None or scalar) arguments\n        input_tuple = (x,)      ## should not be (x), otherwise *input_tuple will decouple x into multiple arguments\n        if context is not None:\n            input_tuple = (x, context)\n        if mask is not None:\n            forward_mask = partial(self._forward, mask=mask)",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:222-237"
+    },
+    "253": {
+        "file_id": 12,
+        "content": "This code creates an attention module and defines its forward pass, allowing for masking and context inputs. It also incorporates checkpointing to prevent issues with non-tensor arguments like None or scalars. The input tuple is constructed to ensure that all relevant inputs are passed correctly during the forward pass.",
+        "type": "comment"
+    },
+    "254": {
+        "file_id": 12,
+        "content": "            return checkpoint(forward_mask, (x,), self.parameters(), self.checkpoint)\n        return checkpoint(self._forward, input_tuple, self.parameters(), self.checkpoint)\n    def _forward(self, x, context=None, mask=None):\n        x = self.attn1(self.norm1(x), context=context if self.disable_self_attn else None, mask=mask) + x\n        x = self.attn2(self.norm2(x), context=context, mask=mask) + x\n        x = self.ff(self.norm3(x)) + x\n        return x\nclass SpatialTransformer(nn.Module):\n    \"\"\"\n    Transformer block for image-like data in spatial axis.\n    First, project the input (aka embedding)\n    and reshape to b, t, d.\n    Then apply standard transformer action.\n    Finally, reshape to image\n    NEW: use_linear for more efficiency instead of the 1x1 convs\n    \"\"\"\n    def __init__(self, in_channels, n_heads, d_head, depth=1, dropout=0., context_dim=None,\n                 use_checkpoint=True, disable_self_attn=False, use_linear=False, video_length=None,\n                 image_cross_attention=False, image_cross_attention_scale_learnable=False):",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:238-261"
+    },
+    "255": {
+        "file_id": 12,
+        "content": "This code defines a Transformer block for image-like data with spatial axis. It first projects the input (embedding), then reshapes to b, t, d and applies standard transformer action, followed by reshaping back into an image. The class 'SpatialTransformer' initializes the module with various parameters including number of heads, dropout rate, context_dim, use_checkpoint, disable_self_attn, use_linear, video_length and image_cross_attention.",
+        "type": "comment"
+    },
+    "256": {
+        "file_id": 12,
+        "content": "        super().__init__()\n        self.in_channels = in_channels\n        inner_dim = n_heads * d_head\n        self.norm = torch.nn.GroupNorm(num_groups=32, num_channels=in_channels, eps=1e-6, affine=True)\n        if not use_linear:\n            self.proj_in = nn.Conv2d(in_channels, inner_dim, kernel_size=1, stride=1, padding=0)\n        else:\n            self.proj_in = nn.Linear(in_channels, inner_dim)\n        attention_cls = None\n        self.transformer_blocks = nn.ModuleList([\n            BasicTransformerBlock(\n                inner_dim,\n                n_heads,\n                d_head,\n                dropout=dropout,\n                context_dim=context_dim,\n                disable_self_attn=disable_self_attn,\n                checkpoint=use_checkpoint,\n                attention_cls=attention_cls,\n                video_length=video_length,\n                image_cross_attention=image_cross_attention,\n                image_cross_attention_scale_learnable=image_cross_attention_scale_learnable,\n                ) for d in range(depth)",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:262-285"
+    },
+    "257": {
+        "file_id": 12,
+        "content": "This code initializes an attention module with specified parameters. It creates a basic transformer block for a given number of depths, using either convolutional or linear projection, and applies normalization. The rest of the parameters are used to configure the specific transformer block implementation.",
+        "type": "comment"
+    },
+    "258": {
+        "file_id": 12,
+        "content": "        ])\n        if not use_linear:\n            self.proj_out = zero_module(nn.Conv2d(inner_dim, in_channels, kernel_size=1, stride=1, padding=0))\n        else:\n            self.proj_out = zero_module(nn.Linear(inner_dim, in_channels))\n        self.use_linear = use_linear\n    def forward(self, x, context=None, **kwargs):\n        b, c, h, w = x.shape\n        x_in = x\n        x = self.norm(x)\n        if not self.use_linear:\n            x = self.proj_in(x)\n        x = rearrange(x, 'b c h w -> b (h w) c').contiguous()\n        if self.use_linear:\n            x = self.proj_in(x)\n        for i, block in enumerate(self.transformer_blocks):\n            x = block(x, context=context, **kwargs)\n        if self.use_linear:\n            x = self.proj_out(x)\n        x = rearrange(x, 'b (h w) c -> b c h w', h=h, w=w).contiguous()\n        if not self.use_linear:\n            x = self.proj_out(x)\n        return x + x_in\nclass TemporalTransformer(nn.Module):\n    \"\"\"\n    Transformer block for image-like data in temporal axis.\n    First, reshape to b, t, d.",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:286-316"
+    },
+    "259": {
+        "file_id": 12,
+        "content": "The code defines a module for an attention-based transformer block that operates on image-like data. It includes parameters for the number of input and output channels, inner dimensions, and kernel size. The forward function applies normalization, projection, transformer blocks, and rearrangement operations to process the input tensor, adding it back at the end. The TemporalTransformer class extends this module specifically for temporal data.",
+        "type": "comment"
+    },
+    "260": {
+        "file_id": 12,
+        "content": "    Then apply standard transformer action.\n    Finally, reshape to image\n    \"\"\"\n    def __init__(self, in_channels, n_heads, d_head, depth=1, dropout=0., context_dim=None,\n                 use_checkpoint=True, use_linear=False, only_self_att=True, causal_attention=False, causal_block_size=1,\n                 relative_position=False, temporal_length=None):\n        super().__init__()\n        self.only_self_att = only_self_att\n        self.relative_position = relative_position\n        self.causal_attention = causal_attention\n        self.causal_block_size = causal_block_size\n        self.in_channels = in_channels\n        inner_dim = n_heads * d_head\n        self.norm = torch.nn.GroupNorm(num_groups=32, num_channels=in_channels, eps=1e-6, affine=True)\n        self.proj_in = nn.Conv1d(in_channels, inner_dim, kernel_size=1, stride=1, padding=0)\n        if not use_linear:\n            self.proj_in = nn.Conv1d(in_channels, inner_dim, kernel_size=1, stride=1, padding=0)\n        else:\n            self.proj_in = nn.Linear(in_channels, inner_dim)",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:317-336"
+    },
+    "261": {
+        "file_id": 12,
+        "content": "This code initializes a Transformer module with specified parameters. It checks if only self-attention is used, if relative position encoding is enabled, and whether causal attention should be applied. It also sets up convolutional or linear projection layers accordingly, as well as normalization layer.",
+        "type": "comment"
+    },
+    "262": {
+        "file_id": 12,
+        "content": "        if relative_position:\n            assert(temporal_length is not None)\n            attention_cls = partial(CrossAttention, relative_position=True, temporal_length=temporal_length)\n        else:\n            attention_cls = partial(CrossAttention, temporal_length=temporal_length)\n        if self.causal_attention:\n            assert(temporal_length is not None)\n            self.mask = torch.tril(torch.ones([1, temporal_length, temporal_length]))\n        if self.only_self_att:\n            context_dim = None\n        self.transformer_blocks = nn.ModuleList([\n            BasicTransformerBlock(\n                inner_dim,\n                n_heads,\n                d_head,\n                dropout=dropout,\n                context_dim=context_dim,\n                attention_cls=attention_cls,\n                checkpoint=use_checkpoint) for d in range(depth)\n        ])\n        if not use_linear:\n            self.proj_out = zero_module(nn.Conv1d(inner_dim, in_channels, kernel_size=1, stride=1, padding=0))\n        else:",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:338-361"
+    },
+    "263": {
+        "file_id": 12,
+        "content": "The code is configuring a transformer model with various options and arguments. It creates an attention layer depending on the relative position flag and temporal length. If causal attention is enabled, it creates a mask to enforce causality. If only self-attention is desired, it sets the context dimension as None. Finally, it builds a list of transformer blocks based on input dimensions and options.",
+        "type": "comment"
+    },
+    "264": {
+        "file_id": 12,
+        "content": "            self.proj_out = zero_module(nn.Linear(inner_dim, in_channels))\n        self.use_linear = use_linear\n    def forward(self, x, context=None):\n        b, c, t, h, w = x.shape\n        x_in = x\n        x = self.norm(x)\n        x = rearrange(x, 'b c t h w -> (b h w) c t').contiguous()\n        if not self.use_linear:\n            x = self.proj_in(x)\n        x = rearrange(x, 'bhw c t -> bhw t c').contiguous()\n        if self.use_linear:\n            x = self.proj_in(x)\n        temp_mask = None\n        if self.causal_attention:\n            # slice the from mask map\n            temp_mask = self.mask[:,:t,:t].to(x.device)\n        if temp_mask is not None:\n            mask = temp_mask.to(x.device)\n            mask = repeat(mask, 'l i j -> (l bhw) i j', bhw=b*h*w)\n        else:\n            mask = None\n        if self.only_self_att:\n            ## note: if no context is given, cross-attention defaults to self-attention\n            for i, block in enumerate(self.transformer_blocks):\n                x = block(x, mask=mask)",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:362-390"
+    },
+    "265": {
+        "file_id": 12,
+        "content": "This code defines a class for an attention module in a neural network. It includes linear projection and normalization operations, and supports causal attention and self-attention. The forward method processes input x through these operations, potentially applying linear projections depending on use_linear flag, and may apply a mask based on the causal_attention and only_self_att flags. If context is provided, cross-attention will be used; otherwise, self-attention is defaulted. The transformer_blocks are applied sequentially to process the input x.",
+        "type": "comment"
+    },
+    "266": {
+        "file_id": 12,
+        "content": "            x = rearrange(x, '(b hw) t c -> b hw t c', b=b).contiguous()\n        else:\n            x = rearrange(x, '(b hw) t c -> b hw t c', b=b).contiguous()\n            context = rearrange(context, '(b t) l con -> b t l con', t=t).contiguous()\n            for i, block in enumerate(self.transformer_blocks):\n                # calculate each batch one by one (since number in shape could not greater then 65,535 for some package)\n                for j in range(b):\n                    context_j = repeat(\n                        context[j],\n                        't l con -> (t r) l con', r=(h * w) // t, t=t).contiguous()\n                    ## note: causal mask will not applied in cross-attention case\n                    x[j] = block(x[j], context=context_j)\n        if self.use_linear:\n            x = self.proj_out(x)\n            x = rearrange(x, 'b (h w) t c -> b c t h w', h=h, w=w).contiguous()\n        if not self.use_linear:\n            x = rearrange(x, 'b hw t c -> (b hw) c t').contiguous()\n            x = self.proj_out(x)",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:391-409"
+    },
+    "267": {
+        "file_id": 12,
+        "content": "This code performs self-attention and possibly cross-attention using a Transformer block. It rearranges input dimensions for the attention operation, applies the transformer block to each batch individually due to memory constraints, and optionally applies a linear layer at the end.",
+        "type": "comment"
+    },
+    "268": {
+        "file_id": 12,
+        "content": "            x = rearrange(x, '(b h w) c t -> b c t h w', b=b, h=h, w=w).contiguous()\n        return x + x_in\nclass GEGLU(nn.Module):\n    def __init__(self, dim_in, dim_out):\n        super().__init__()\n        self.proj = nn.Linear(dim_in, dim_out * 2)\n    def forward(self, x):\n        x, gate = self.proj(x).chunk(2, dim=-1)\n        return x * F.gelu(gate)\nclass FeedForward(nn.Module):\n    def __init__(self, dim, dim_out=None, mult=4, glu=False, dropout=0.):\n        super().__init__()\n        inner_dim = int(dim * mult)\n        dim_out = default(dim_out, dim)\n        project_in = nn.Sequential(\n            nn.Linear(dim, inner_dim),\n            nn.GELU()\n        ) if not glu else GEGLU(dim, inner_dim)\n        self.net = nn.Sequential(\n            project_in,\n            nn.Dropout(dropout),\n            nn.Linear(inner_dim, dim_out)\n        )\n    def forward(self, x):\n        return self.net(x)\nclass LinearAttention(nn.Module):\n    def __init__(self, dim, heads=4, dim_head=32):\n        super().__init__()\n        self.heads = heads",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:410-448"
+    },
+    "269": {
+        "file_id": 12,
+        "content": "Code snippet defines several neural network modules for attention mechanisms, including rearrange function and classes like GEGLU, FeedForward, and LinearAttention. These modules are used in computer vision tasks to improve model performance by selectively focusing on important features in the input data.",
+        "type": "comment"
+    },
+    "270": {
+        "file_id": 12,
+        "content": "        hidden_dim = dim_head * heads\n        self.to_qkv = nn.Conv2d(dim, hidden_dim * 3, 1, bias = False)\n        self.to_out = nn.Conv2d(hidden_dim, dim, 1)\n    def forward(self, x):\n        b, c, h, w = x.shape\n        qkv = self.to_qkv(x)\n        q, k, v = rearrange(qkv, 'b (qkv heads c) h w -> qkv b heads c (h w)', heads = self.heads, qkv=3)\n        k = k.softmax(dim=-1)  \n        context = torch.einsum('bhdn,bhen->bhde', k, v)\n        out = torch.einsum('bhde,bhdn->bhen', context, q)\n        out = rearrange(out, 'b heads c (h w) -> b (heads c) h w', heads=self.heads, h=h, w=w)\n        return self.to_out(out)\nclass SpatialSelfAttention(nn.Module):\n    def __init__(self, in_channels):\n        super().__init__()\n        self.in_channels = in_channels\n        self.norm = torch.nn.GroupNorm(num_groups=32, num_channels=in_channels, eps=1e-6, affine=True)\n        self.q = torch.nn.Conv2d(in_channels,\n                                 in_channels,\n                                 kernel_size=1,\n                                 stride=1,",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:449-473"
+    },
+    "271": {
+        "file_id": 12,
+        "content": "This code defines a class for SpatialSelfAttention. It initializes a GroupNorm layer and three convolutional layers in the constructor. The forward method performs spatial self-attention, rearranging the input, calculating attention scores, and producing output with the defined convolutional layers applied.",
+        "type": "comment"
+    },
+    "272": {
+        "file_id": 12,
+        "content": "                                 padding=0)\n        self.k = torch.nn.Conv2d(in_channels,\n                                 in_channels,\n                                 kernel_size=1,\n                                 stride=1,\n                                 padding=0)\n        self.v = torch.nn.Conv2d(in_channels,\n                                 in_channels,\n                                 kernel_size=1,\n                                 stride=1,\n                                 padding=0)\n        self.proj_out = torch.nn.Conv2d(in_channels,\n                                        in_channels,\n                                        kernel_size=1,\n                                        stride=1,\n                                        padding=0)\n    def forward(self, x):\n        h_ = x\n        h_ = self.norm(h_)\n        q = self.q(h_)\n        k = self.k(h_)\n        v = self.v(h_)\n        # compute attention\n        b,c,h,w = q.shape\n        q = rearrange(q, 'b c h w -> b (h w) c')\n        k = rearrange(k, 'b c h w -> b c (h w)')",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:474-501"
+    },
+    "273": {
+        "file_id": 12,
+        "content": "This code defines a class for attention module using Conv2d layers in PyTorch. It initializes three convolution layers (q, k, and v) with the same input and output channels but different kernel sizes. The forward function applies normalization, passes the input through the q, k, and v layers, then computes attention using rearranged tensors for queries, keys, and values.",
+        "type": "comment"
+    },
+    "274": {
+        "file_id": 12,
+        "content": "        w_ = torch.einsum('bij,bjk->bik', q, k)\n        w_ = w_ * (int(c)**(-0.5))\n        w_ = torch.nn.functional.softmax(w_, dim=2)\n        # attend to values\n        v = rearrange(v, 'b c h w -> b c (h w)')\n        w_ = rearrange(w_, 'b i j -> b j i')\n        h_ = torch.einsum('bij,bjk->bik', v, w_)\n        h_ = rearrange(h_, 'b c (h w) -> b c h w', h=h)\n        h_ = self.proj_out(h_)\n        return x+h_",
+        "type": "code",
+        "location": "/lvdm/modules/attention.py:502-514"
+    },
+    "275": {
+        "file_id": 12,
+        "content": "This code snippet is performing multi-head attention in a transformer model. It calculates the weights (`w_`) for each head, applies softmax to normalize them, and then attends to the values by multiplying with the rearranged value matrix (`v`). The resulting hidden states (`h_`) are passed through a final projection layer before being added back to the input (`x`) and returned.",
+        "type": "comment"
+    },
+    "276": {
+        "file_id": 13,
+        "content": "/lvdm/modules/encoders/condition.py",
+        "type": "filepath"
+    },
+    "277": {
+        "file_id": 13,
+        "content": "This code defines classes for T5 and CLIP model-based text and image encoding, initializes an OpenCLIP vision transformer encoder, includes methods to encode text and images, performs convolution and normalization, combines outputs in the `FrozenCLIPT5Encoder` class.",
+        "type": "summary"
+    },
+    "278": {
+        "file_id": 13,
+        "content": "import torch\nimport torch.nn as nn\nimport kornia\nimport open_clip\nfrom torch.utils.checkpoint import checkpoint\nfrom transformers import T5Tokenizer, T5EncoderModel, CLIPTokenizer, CLIPTextModel\nfrom lvdm.common import autocast\nfrom utils.utils import count_params\nclass AbstractEncoder(nn.Module):\n    def __init__(self):\n        super().__init__()\n    def encode(self, *args, **kwargs):\n        raise NotImplementedError\nclass IdentityEncoder(AbstractEncoder):\n    def encode(self, x):\n        return x\nclass ClassEmbedder(nn.Module):\n    def __init__(self, embed_dim, n_classes=1000, key='class', ucg_rate=0.1):\n        super().__init__()\n        self.key = key\n        self.embedding = nn.Embedding(n_classes, embed_dim)\n        self.n_classes = n_classes\n        self.ucg_rate = ucg_rate\n    def forward(self, batch, key=None, disable_dropout=False):\n        if key is None:\n            key = self.key\n        # this is for use in crossattn\n        c = batch[key][:, None]\n        if self.ucg_rate > 0. and not disable_dropout:",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/condition.py:1-37"
+    },
+    "279": {
+        "file_id": 13,
+        "content": "This code defines two classes: AbstractEncoder and ClassEmbedder. The AbstractEncoder is an abstract class that must be inherited for custom encoders. It has a required encode method. The ClassEmbedder class takes in an embedding dimension, number of classes, key (class), and ucg_rate (undersampling class rate) as parameters. It also has an embedded layer and a n_classes variable. The forward method returns the embeddings based on the given batch and can disable dropout if desired.",
+        "type": "comment"
+    },
+    "280": {
+        "file_id": 13,
+        "content": "            mask = 1. - torch.bernoulli(torch.ones_like(c) * self.ucg_rate)\n            c = mask * c + (1 - mask) * torch.ones_like(c) * (self.n_classes - 1)\n            c = c.long()\n        c = self.embedding(c)\n        return c\n    def get_unconditional_conditioning(self, bs, device=\"cuda\"):\n        uc_class = self.n_classes - 1  # 1000 classes --> 0 ... 999, one extra class for ucg (class 1000)\n        uc = torch.ones((bs,), device=device) * uc_class\n        uc = {self.key: uc}\n        return uc\ndef disabled_train(self, mode=True):\n    \"\"\"Overwrite model.train with this function to make sure train/eval mode\n    does not change anymore.\"\"\"\n    return self\nclass FrozenT5Embedder(AbstractEncoder):\n    \"\"\"Uses the T5 transformer encoder for text\"\"\"\n    def __init__(self, version=\"google/t5-v1_1-large\", device=\"cuda\", max_length=77,\n                 freeze=True):  # others are google/t5-v1_1-xl and google/t5-v1_1-xxl\n        super().__init__()\n        self.tokenizer = T5Tokenizer.from_pretrained(version)\n        self.transformer = T5EncoderModel.from_pretrained(version)",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/condition.py:38-64"
+    },
+    "281": {
+        "file_id": 13,
+        "content": "This code defines a class for encoding text using T5 Transformer encoder, with an optional unconditional conditioning. The get_unconditional_conditioning method returns a tensor of unconditional class indices for batch size bs, and the FrozenT5Embedder class freezes the embedder model in training mode. The code also includes other methods like disabled_train that overwrite model.train to prevent changing train/eval mode.",
+        "type": "comment"
+    },
+    "282": {
+        "file_id": 13,
+        "content": "        self.device = device\n        self.max_length = max_length  # TODO: typical value?\n        if freeze:\n            self.freeze()\n    def freeze(self):\n        self.transformer = self.transformer.eval()\n        # self.train = disabled_train\n        for param in self.parameters():\n            param.requires_grad = False\n    def forward(self, text):\n        batch_encoding = self.tokenizer(text, truncation=True, max_length=self.max_length, return_length=True,\n                                        return_overflowing_tokens=False, padding=\"max_length\", return_tensors=\"pt\")\n        tokens = batch_encoding[\"input_ids\"].to(self.device)\n        outputs = self.transformer(input_ids=tokens)\n        z = outputs.last_hidden_state\n        return z\n    def encode(self, text):\n        return self(text)\nclass FrozenCLIPEmbedder(AbstractEncoder):\n    \"\"\"Uses the CLIP transformer encoder for text (from huggingface)\"\"\"\n    LAYERS = [\n        \"last\",\n        \"pooled\",\n        \"hidden\"\n    ]\n    def __init__(self, version=\"openai/clip-vit-large-patch14\", device=\"cuda\", max_length=77,",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/condition.py:65-97"
+    },
+    "283": {
+        "file_id": 13,
+        "content": "This code defines a class \"ConditionEncoder\" that initializes an encoder and sets its maximum length. It has methods to freeze the model parameters, forward pass for encoding text using transformer, and encode text. The \"FrozenCLIPEmbedder\" class is an extension of AbstractEncoder using CLIP transformer for text encoding, with specified layers and device settings.",
+        "type": "comment"
+    },
+    "284": {
+        "file_id": 13,
+        "content": "                 freeze=True, layer=\"last\", layer_idx=None):  # clip-vit-base-patch32\n        super().__init__()\n        assert layer in self.LAYERS\n        self.tokenizer = CLIPTokenizer.from_pretrained(version)\n        self.transformer = CLIPTextModel.from_pretrained(version)\n        self.device = device\n        self.max_length = max_length\n        if freeze:\n            self.freeze()\n        self.layer = layer\n        self.layer_idx = layer_idx\n        if layer == \"hidden\":\n            assert layer_idx is not None\n            assert 0 <= abs(layer_idx) <= 12\n    def freeze(self):\n        self.transformer = self.transformer.eval()\n        # self.train = disabled_train\n        for param in self.parameters():\n            param.requires_grad = False\n    def forward(self, text):\n        batch_encoding = self.tokenizer(text, truncation=True, max_length=self.max_length, return_length=True,\n                                        return_overflowing_tokens=False, padding=\"max_length\", return_tensors=\"pt\")\n        tokens = batch_encoding[\"input_ids\"].to(self.device)",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/condition.py:98-122"
+    },
+    "285": {
+        "file_id": 13,
+        "content": "This code defines a class that initializes a CLIP model for text encoding. It takes version, device, and optional freeze parameters. The freeze method disables gradient updates and sets the model to evaluation mode. The forward method tokenizes the input text and moves the input_ids tensor to the specified device.",
+        "type": "comment"
+    },
+    "286": {
+        "file_id": 13,
+        "content": "        outputs = self.transformer(input_ids=tokens, output_hidden_states=self.layer == \"hidden\")\n        if self.layer == \"last\":\n            z = outputs.last_hidden_state\n        elif self.layer == \"pooled\":\n            z = outputs.pooler_output[:, None, :]\n        else:\n            z = outputs.hidden_states[self.layer_idx]\n        return z\n    def encode(self, text):\n        return self(text)\nclass ClipImageEmbedder(nn.Module):\n    def __init__(\n            self,\n            model,\n            jit=False,\n            device='cuda' if torch.cuda.is_available() else 'cpu',\n            antialias=True,\n            ucg_rate=0.\n    ):\n        super().__init__()\n        from clip import load as load_clip\n        self.model, _ = load_clip(name=model, device=device, jit=jit)\n        self.antialias = antialias\n        self.register_buffer('mean', torch.Tensor([0.48145466, 0.4578275, 0.40821073]), persistent=False)\n        self.register_buffer('std', torch.Tensor([0.26862954, 0.26130258, 0.27577711]), persistent=False)",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/condition.py:123-152"
+    },
+    "287": {
+        "file_id": 13,
+        "content": "The code contains a class 'ConditionEncoder' with methods to encode text and retrieve encoded outputs based on the specified layer. The 'encode' method takes in text as input and returns the encoded output. The 'ClipImageEmbedder' class initializes an instance of the specified CLIP model, registers mean and std buffers, and sets antialias flag.",
+        "type": "comment"
+    },
+    "288": {
+        "file_id": 13,
+        "content": "        self.ucg_rate = ucg_rate\n    def preprocess(self, x):\n        # normalize to [0,1]\n        x = kornia.geometry.resize(x, (224, 224),\n                                   interpolation='bicubic', align_corners=True,\n                                   antialias=self.antialias)\n        x = (x + 1.) / 2.\n        # re-normalize according to clip\n        x = kornia.enhance.normalize(x, self.mean, self.std)\n        return x\n    def forward(self, x, no_dropout=False):\n        # x is assumed to be in range [-1,1]\n        out = self.model.encode_image(self.preprocess(x))\n        out = out.to(x.dtype)\n        if self.ucg_rate > 0. and not no_dropout:\n            out = torch.bernoulli((1. - self.ucg_rate) * torch.ones(out.shape[0], device=out.device))[:, None] * out\n        return out\nclass FrozenOpenCLIPEmbedder(AbstractEncoder):\n    \"\"\"\n    Uses the OpenCLIP transformer encoder for text\n    \"\"\"\n    LAYERS = [\n        # \"pooled\",\n        \"last\",\n        \"penultimate\"\n    ]\n    def __init__(self, arch=\"ViT-H-14\", version=\"laion2b_s32b_b79k\", device=\"cuda\", max_length=77,",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/condition.py:153-184"
+    },
+    "289": {
+        "file_id": 13,
+        "content": "This code contains two classes, `Condition` and `FrozenOpenCLIPEmbedder`. The `Condition` class preprocesses input data by normalizing it to [0,1] range and then re-normalizes according to a given clip. It also allows dropout in the forward function if specified. The `FrozenOpenCLIPEmbedder` class is an abstract encoder that uses the OpenCLIP transformer encoder for text input, with customizable layers and options for architecture and device.",
+        "type": "comment"
+    },
+    "290": {
+        "file_id": 13,
+        "content": "                 freeze=True, layer=\"last\"):\n        super().__init__()\n        assert layer in self.LAYERS\n        model, _, _ = open_clip.create_model_and_transforms(arch, device=torch.device('cpu'), pretrained=version)\n        del model.visual\n        self.model = model\n        self.device = device\n        self.max_length = max_length\n        if freeze:\n            self.freeze()\n        self.layer = layer\n        if self.layer == \"last\":\n            self.layer_idx = 0\n        elif self.layer == \"penultimate\":\n            self.layer_idx = 1\n        else:\n            raise NotImplementedError()\n    def freeze(self):\n        self.model = self.model.eval()\n        for param in self.parameters():\n            param.requires_grad = False\n    def forward(self, text):\n        tokens = open_clip.tokenize(text) ## all clip models use 77 as context length\n        z = self.encode_with_transformer(tokens.to(self.device))\n        return z\n    def encode_with_transformer(self, text):\n        x = self.model.token_embedding(text)  # [batch_size, n_ctx, d_model]",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/condition.py:185-215"
+    },
+    "291": {
+        "file_id": 13,
+        "content": "The code is a part of the condition class in the encoders module. It initializes an instance of the class, freezes model parameters if necessary, and provides a forward pass for encoding text using a transformer. The encode_with_transformer method takes input text and returns encoded representation z.",
+        "type": "comment"
+    },
+    "292": {
+        "file_id": 13,
+        "content": "        x = x + self.model.positional_embedding\n        x = x.permute(1, 0, 2)  # NLD -> LND\n        x = self.text_transformer_forward(x, attn_mask=self.model.attn_mask)\n        x = x.permute(1, 0, 2)  # LND -> NLD\n        x = self.model.ln_final(x)\n        return x\n    def text_transformer_forward(self, x: torch.Tensor, attn_mask=None):\n        for i, r in enumerate(self.model.transformer.resblocks):\n            if i == len(self.model.transformer.resblocks) - self.layer_idx:\n                break\n            if self.model.transformer.grad_checkpointing and not torch.jit.is_scripting():\n                x = checkpoint(r, x, attn_mask)\n            else:\n                x = r(x, attn_mask=attn_mask)\n        return x\n    def encode(self, text):\n        return self(text)\nclass FrozenOpenCLIPImageEmbedder(AbstractEncoder):\n    \"\"\"\n    Uses the OpenCLIP vision transformer encoder for images\n    \"\"\"\n    def __init__(self, arch=\"ViT-H-14\", version=\"laion2b_s32b_b79k\", device=\"cuda\", max_length=77,\n                 freeze=True, layer=\"pooled\", antialias=True, ucg_rate=0.):",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/condition.py:216-243"
+    },
+    "293": {
+        "file_id": 13,
+        "content": "This code defines a class that implements an image encoder using the OpenCLIP vision transformer. The encoder takes in a text input and returns encoded output after applying several layers. The `text_transformer_forward` function iterates over the resblock layers, and the `encode` method takes a text as input and returns its encoded representation.",
+        "type": "comment"
+    },
+    "294": {
+        "file_id": 13,
+        "content": "        super().__init__()\n        model, _, _ = open_clip.create_model_and_transforms(arch, device=torch.device('cpu'),\n                                                            pretrained=version, )\n        del model.transformer\n        self.model = model\n        # self.mapper = torch.nn.Linear(1280, 1024)\n        self.device = device\n        self.max_length = max_length\n        if freeze:\n            self.freeze()\n        self.layer = layer\n        if self.layer == \"penultimate\":\n            raise NotImplementedError()\n            self.layer_idx = 1\n        self.antialias = antialias\n        self.register_buffer('mean', torch.Tensor([0.48145466, 0.4578275, 0.40821073]), persistent=False)\n        self.register_buffer('std', torch.Tensor([0.26862954, 0.26130258, 0.27577711]), persistent=False)\n        self.ucg_rate = ucg_rate\n    def preprocess(self, x):\n        # normalize to [0,1]\n        x = kornia.geometry.resize(x, (224, 224),\n                                   interpolation='bicubic', align_corners=True,",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/condition.py:244-268"
+    },
+    "295": {
+        "file_id": 13,
+        "content": "The code initializes a model using open_clip library, removes the transformer layer, and assigns it to self.model. It also registers buffer for mean and std values for normalization. The preprocess method resizes input images to 224x224 resolution.",
+        "type": "comment"
+    },
+    "296": {
+        "file_id": 13,
+        "content": "                                   antialias=self.antialias)\n        x = (x + 1.) / 2.\n        # renormalize according to clip\n        x = kornia.enhance.normalize(x, self.mean, self.std)\n        return x\n    def freeze(self):\n        self.model = self.model.eval()\n        for param in self.model.parameters():\n            param.requires_grad = False\n    @autocast\n    def forward(self, image, no_dropout=False):\n        z = self.encode_with_vision_transformer(image)\n        if self.ucg_rate > 0. and not no_dropout:\n            z = torch.bernoulli((1. - self.ucg_rate) * torch.ones(z.shape[0], device=z.device))[:, None] * z\n        return z\n    def encode_with_vision_transformer(self, img):\n        img = self.preprocess(img)\n        x = self.model.visual(img)\n        return x\n    def encode(self, text):\n        return self(text)\nclass FrozenOpenCLIPImageEmbedderV2(AbstractEncoder):\n    \"\"\"\n    Uses the OpenCLIP vision transformer encoder for images\n    \"\"\"\n    def __init__(self, arch=\"ViT-H-14\", version=\"laion2b_s32b_b79k\", device=\"cuda\",",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/condition.py:269-300"
+    },
+    "297": {
+        "file_id": 13,
+        "content": "This code defines a FrozenOpenCLIPImageEmbedderV2 class that initializes an OpenCLIP vision transformer encoder for images. It includes methods to encode text and images, freeze the model's parameters, and perform forward pass with optional dropout. The class inherits from AbstractEncoder.",
+        "type": "comment"
+    },
+    "298": {
+        "file_id": 13,
+        "content": "                 freeze=True, layer=\"pooled\", antialias=True):\n        super().__init__()\n        model, _, _ = open_clip.create_model_and_transforms(arch, device=torch.device('cpu'),\n                                                            pretrained=version, )\n        del model.transformer\n        self.model = model\n        self.device = device\n        if freeze:\n            self.freeze()\n        self.layer = layer\n        if self.layer == \"penultimate\":\n            raise NotImplementedError()\n            self.layer_idx = 1\n        self.antialias = antialias\n        self.register_buffer('mean', torch.Tensor([0.48145466, 0.4578275, 0.40821073]), persistent=False)\n        self.register_buffer('std', torch.Tensor([0.26862954, 0.26130258, 0.27577711]), persistent=False)\n    def preprocess(self, x):\n        # normalize to [0,1]\n        x = kornia.geometry.resize(x, (224, 224),\n                                   interpolation='bicubic', align_corners=True,\n                                   antialias=self.antialias)",
+        "type": "code",
+        "location": "/lvdm/modules/encoders/condition.py:301-326"
+    },
+    "299": {
+        "file_id": 13,
+        "content": "This code initializes an object for preprocessing images using OpenCV's create_model_and_transforms function. It freezes the transformer layer, sets the desired layer to process from, and registers buffer for mean and standard deviation for normalization. It also allows for resizing of the image with antialiasing.",
+        "type": "comment"
+    }
+}

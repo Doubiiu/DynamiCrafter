@@ -1,0 +1,20 @@
+{
+    "summary": "This YAML file configures deep learning models for image generation and inpainting, specifying architecture, timesteps, attention mechanisms, and parameters.",
+    "details": [
+        {
+            "comment": "This YAML file configures a deep learning model with image generation capabilities, using a LatentVisualDiffusion target and an OpenAIModel3D UNet for conditioning. It has multiple timesteps, specific channel configurations, and various attention mechanisms enabled.",
+            "location": "\"/media/root/Prima/works/DynamiCrafter/docs/src/configs/inference_256_v1.0.yaml\":0-43",
+            "content": "model:\n  target: lvdm.models.ddpm3d.LatentVisualDiffusion\n  params:\n    linear_start: 0.00085\n    linear_end: 0.012\n    num_timesteps_cond: 1\n    timesteps: 1000\n    first_stage_key: video\n    cond_stage_key: caption\n    cond_stage_trainable: False\n    conditioning_key: hybrid\n    image_size: [32, 32]\n    channels: 4\n    scale_by_std: False\n    scale_factor: 0.18215\n    use_ema: False\n    uncond_type: 'empty_seq'\n    unet_config:\n      target: lvdm.modules.networks.openaimodel3d.UNetModel\n      params:\n        in_channels: 8\n        out_channels: 4\n        model_channels: 320\n        attention_resolutions:\n        - 4\n        - 2\n        - 1\n        num_res_blocks: 2\n        channel_mult:\n        - 1\n        - 2\n        - 4\n        - 4\n        dropout: 0.1\n        num_head_channels: 64\n        transformer_depth: 1\n        context_dim: 1024\n        use_linear: true\n        use_checkpoint: True\n        temporal_conv: True\n        temporal_attention: True\n        temporal_selfatt_only: true\n        use_relative_position: false\n        use_causal_attention: False"
+        },
+        {
+            "comment": "This code configures an image inpainting model using the AutoencoderKL from lvdm library. It has multiple stages, including a first stage autoencoder, conditioning stages for CLIP embeddings, and an image projection stage. The configuration includes specific parameters like embedding dimension, monitor metric, loss configuration, and more.",
+            "location": "\"/media/root/Prima/works/DynamiCrafter/docs/src/configs/inference_256_v1.0.yaml\":44-86",
+            "content": "        temporal_length: 16\n        addition_attention: true\n        image_cross_attention: true\n        image_cross_attention_scale_learnable: true\n        default_fs: 3\n        fs_condition: true\n    first_stage_config:\n      target: lvdm.models.autoencoder.AutoencoderKL\n      params:\n        embed_dim: 4\n        monitor: val/rec_loss\n        ddconfig:\n          double_z: True\n          z_channels: 4\n          resolution: 256\n          in_channels: 3\n          out_ch: 3\n          ch: 128\n          ch_mult:\n          - 1\n          - 2\n          - 4\n          - 4\n          num_res_blocks: 2\n          attn_resolutions: []\n          dropout: 0.0\n        lossconfig:\n          target: torch.nn.Identity\n    cond_stage_config:\n      target: lvdm.modules.encoders.condition.FrozenOpenCLIPEmbedder\n      params:\n        freeze: true\n        layer: \"penultimate\"\n    img_cond_stage_config:\n      target: lvdm.modules.encoders.condition.FrozenOpenCLIPImageEmbedderV2\n      params:\n        freeze: true\n    image_proj_stage_config:\n      target: lvdm.modules.encoders.resampler.Resampler"
+        },
+        {
+            "comment": "This code segment is part of a YAML configuration file for a neural network model. It defines the parameters for the network architecture, including dimensions, depth, and other specifications to be used in the inference process.",
+            "location": "\"/media/root/Prima/works/DynamiCrafter/docs/src/configs/inference_256_v1.0.yaml\":87-96",
+            "content": "      params:\n        dim: 1024\n        depth: 4\n        dim_head: 64\n        heads: 12\n        num_queries: 16\n        embedding_dim: 1280\n        output_dim: 1024\n        ff_mult: 4\n        video_length: 16"
+        }
+    ]
+}

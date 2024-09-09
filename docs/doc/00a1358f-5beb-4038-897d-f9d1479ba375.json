@@ -1,0 +1,10 @@
+{
+    "summary": "This script runs an inference process using Dynamic Rafter's model with specific configurations and saves the results. It sets the seed, ckpt_path, config path, savedir, n_samples, bs, height, width, unconditional_guidance_scale, ddim_steps, ddim_eta, prompt_dir, text_input, video_length, and frame_stride parameters. The script also has an optional argument to use multiple conditional CFGs.",
+    "details": [
+        {
+            "comment": "This script runs an inference process using Dynamic Rafter's model with specific configurations and saves the results. It sets the seed, ckpt_path, config path, savedir, n_samples, bs, height, width, unconditional_guidance_scale, ddim_steps, ddim_eta, prompt_dir, text_input, video_length, and frame_stride parameters. The script also has an optional argument to use multiple conditional CFGs.",
+            "location": "\"/media/root/Prima/works/DynamiCrafter/docs/src/scripts/run.sh\":0-24",
+            "content": "name=\"dynamicrafter_256\"\nckpt='checkpoints/dynamicrafter_256_v1/model.ckpt'\nconfig='configs/inference_256_v1.0.yaml'\nprompt_dir=\"prompts/\"\nres_dir=\"results\"\nCUDA_VISIBLE_DEVICES=0 python3 scripts/evaluation/inference.py \\\n--seed 123 \\\n--ckpt_path $ckpt \\\n--config $config \\\n--savedir $res_dir/$name \\\n--n_samples 1 \\\n--bs 1 --height 256 --width 256 \\\n--unconditional_guidance_scale 7.5 \\\n--ddim_steps 50 \\\n--ddim_eta 1.0 \\\n--prompt_dir $prompt_dir \\\n--text_input \\\n--video_length 16 \\\n--frame_stride 3\n## multi-cond CFG: the <unconditional_guidance_scale> is s_txt, <cfg_img> is s_img\n#--multiple_cond_cfg --cfg_img 7.5"
+        }
+    ]
+}

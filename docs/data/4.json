@@ -1,0 +1,547 @@
+{
+    "400": {
+        "file_id": 16,
+        "content": "        else:\n            self.skip_connection = conv_nd(dims, channels, self.out_channels, 1)\n        if self.use_temporal_conv:\n            self.temopral_conv = TemporalConvBlock(\n                self.out_channels,\n                self.out_channels,\n                dropout=0.1,\n                spatial_aware=tempspatial_aware\n            )\n    def forward(self, x, emb, batch_size=None):\n        \"\"\"\n        Apply the block to a Tensor, conditioned on a timestep embedding.\n        :param x: an [N x C x ...] Tensor of features.\n        :param emb: an [N x emb_channels] Tensor of timestep embeddings.\n        :return: an [N x C x ...] Tensor of outputs.\n        \"\"\"\n        input_tuple = (x, emb)\n        if batch_size:\n            forward_batchsize = partial(self._forward, batch_size=batch_size)\n            return checkpoint(forward_batchsize, input_tuple, self.parameters(), self.use_checkpoint)\n        return checkpoint(self._forward, input_tuple, self.parameters(), self.use_checkpoint)\n    def _forward(self, x, emb, batch_size=None):",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:186-210"
+    },
+    "401": {
+        "file_id": 16,
+        "content": "This code defines a class that implements a neural network block with the option to skip connection and apply temporal convolution. The forward method applies the block to an input Tensor conditioned on timestep embeddings, with optional checkpointing for improved training efficiency.",
+        "type": "comment"
+    },
+    "402": {
+        "file_id": 16,
+        "content": "        if self.updown:\n            in_rest, in_conv = self.in_layers[:-1], self.in_layers[-1]\n            h = in_rest(x)\n            h = self.h_upd(h)\n            x = self.x_upd(x)\n            h = in_conv(h)\n        else:\n            h = self.in_layers(x)\n        emb_out = self.emb_layers(emb).type(h.dtype)\n        while len(emb_out.shape) < len(h.shape):\n            emb_out = emb_out[..., None]\n        if self.use_scale_shift_norm:\n            out_norm, out_rest = self.out_layers[0], self.out_layers[1:]\n            scale, shift = torch.chunk(emb_out, 2, dim=1)\n            h = out_norm(h) * (1 + scale) + shift\n            h = out_rest(h)\n        else:\n            h = h + emb_out\n            h = self.out_layers(h)\n        h = self.skip_connection(x) + h\n        if self.use_temporal_conv and batch_size:\n            h = rearrange(h, '(b t) c h w -> b c t h w', b=batch_size)\n            h = self.temopral_conv(h)\n            h = rearrange(h, 'b c t h w -> (b t) c h w')\n        return h\nclass TemporalConvBlock(nn.Module):",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:211-239"
+    },
+    "403": {
+        "file_id": 16,
+        "content": "The code snippet initializes the input layers and performs forward pass for OpenAI Model 3D. If 'updown' is True, it applies upsampling operations before passing through input and convolutional layers. Embedding outputs are added to hidden states after reshaping if 'use_scale_shift_norm' is set. Finally, a skip connection is added, and optionally, temporal convolution is applied if batch size exists. The TemporalConvBlock class inherits from nn.Module for building this module.",
+        "type": "comment"
+    },
+    "404": {
+        "file_id": 16,
+        "content": "    \"\"\"\n    Adapted from modelscope: https://github.com/modelscope/modelscope/blob/master/modelscope/models/multi_modal/video_synthesis/unet_sd.py\n    \"\"\"\n    def __init__(self, in_channels, out_channels=None, dropout=0.0, spatial_aware=False):\n        super(TemporalConvBlock, self).__init__()\n        if out_channels is None:\n            out_channels = in_channels\n        self.in_channels = in_channels\n        self.out_channels = out_channels\n        th_kernel_shape = (3, 1, 1) if not spatial_aware else (3, 3, 1)\n        th_padding_shape = (1, 0, 0) if not spatial_aware else (1, 1, 0)\n        tw_kernel_shape = (3, 1, 1) if not spatial_aware else (3, 1, 3)\n        tw_padding_shape = (1, 0, 0) if not spatial_aware else (1, 0, 1)\n        # conv layers\n        self.conv1 = nn.Sequential(\n            nn.GroupNorm(32, in_channels), nn.SiLU(),\n            nn.Conv3d(in_channels, out_channels, th_kernel_shape, padding=th_padding_shape))\n        self.conv2 = nn.Sequential(\n            nn.GroupNorm(32, out_channels), nn.SiLU(), nn.Dropout(dropout),",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:240-259"
+    },
+    "405": {
+        "file_id": 16,
+        "content": "The code defines a TemporalConvBlock class that inherits from an unknown superclass. It initializes the class with input and output channel counts, a dropout rate, and a spatial_aware boolean. If out_channels is None, it defaults to in_channels. The code also specifies different kernel shapes and padding shapes for temporal and 2D convolutions based on the spatial_aware flag. It initializes three convolutional layers with different activation functions, normalization, and dropout operations.",
+        "type": "comment"
+    },
+    "406": {
+        "file_id": 16,
+        "content": "            nn.Conv3d(out_channels, in_channels, tw_kernel_shape, padding=tw_padding_shape))\n        self.conv3 = nn.Sequential(\n            nn.GroupNorm(32, out_channels), nn.SiLU(), nn.Dropout(dropout),\n            nn.Conv3d(out_channels, in_channels, th_kernel_shape, padding=th_padding_shape))\n        self.conv4 = nn.Sequential(\n            nn.GroupNorm(32, out_channels), nn.SiLU(), nn.Dropout(dropout),\n            nn.Conv3d(out_channels, in_channels, tw_kernel_shape, padding=tw_padding_shape))\n        # zero out the last layer params,so the conv block is identity\n        nn.init.zeros_(self.conv4[-1].weight)\n        nn.init.zeros_(self.conv4[-1].bias)\n    def forward(self, x):\n        identity = x\n        x = self.conv1(x)\n        x = self.conv2(x)\n        x = self.conv3(x)\n        x = self.conv4(x)\n        return identity + x\nclass UNetModel(nn.Module):\n    \"\"\"\n    The full UNet model with attention and timestep embedding.\n    :param in_channels: in_channels in the input Tensor.\n    :param model_channels: base channel count for the model.",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:260-285"
+    },
+    "407": {
+        "file_id": 16,
+        "content": "This code defines a UNet model with attention and timestep embedding. It consists of four Conv3d sequences, where the last layer parameters are set to zero to make the conv block identity. The forward function performs the operations and returns the output.",
+        "type": "comment"
+    },
+    "408": {
+        "file_id": 16,
+        "content": "    :param out_channels: channels in the output Tensor.\n    :param num_res_blocks: number of residual blocks per downsample.\n    :param attention_resolutions: a collection of downsample rates at which\n        attention will take place. May be a set, list, or tuple.\n        For example, if this contains 4, then at 4x downsampling, attention\n        will be used.\n    :param dropout: the dropout probability.\n    :param channel_mult: channel multiplier for each level of the UNet.\n    :param conv_resample: if True, use learned convolutions for upsampling and\n        downsampling.\n    :param dims: determines if the signal is 1D, 2D, or 3D.\n    :param num_classes: if specified (as an int), then this model will be\n        class-conditional with `num_classes` classes.\n    :param use_checkpoint: use gradient checkpointing to reduce memory usage.\n    :param num_heads: the number of attention heads in each attention layer.\n    :param num_heads_channels: if specified, ignore num_heads and instead use\n                               a fixed channel width per attention head.",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:286-302"
+    },
+    "409": {
+        "file_id": 16,
+        "content": "The code defines a function that takes parameters for its UNet model, including output channels, number of residual blocks per downsample, attention resolutions, dropout probability, channel multiplier, convolutional resampling method, signal dimensions, number of classes (if class-conditional), use gradient checkpointing, and attention head settings.",
+        "type": "comment"
+    },
+    "410": {
+        "file_id": 16,
+        "content": "    :param num_heads_upsample: works with num_heads to set a different number\n                               of heads for upsampling. Deprecated.\n    :param use_scale_shift_norm: use a FiLM-like conditioning mechanism.\n    :param resblock_updown: use residual blocks for up/downsampling.\n    :param use_new_attention_order: use a different attention pattern for potentially\n                                    increased efficiency.\n    \"\"\"\n    def __init__(self,\n                 in_channels,\n                 model_channels,\n                 out_channels,\n                 num_res_blocks,\n                 attention_resolutions,\n                 dropout=0.0,\n                 channel_mult=(1, 2, 4, 8),\n                 conv_resample=True,\n                 dims=2,\n                 context_dim=None,\n                 use_scale_shift_norm=False,\n                 resblock_updown=False,\n                 num_heads=-1,\n                 num_head_channels=-1,\n                 transformer_depth=1,\n                 use_linear=False,",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:303-327"
+    },
+    "411": {
+        "file_id": 16,
+        "content": "This code defines a class with multiple parameters for initializing an OpenAI model 3D. The parameters include input, output channels, number of resolution blocks, and others. It also includes the option to use residual blocks for up/downsampling, and different attention patterns.",
+        "type": "comment"
+    },
+    "412": {
+        "file_id": 16,
+        "content": "                 use_checkpoint=False,\n                 temporal_conv=False,\n                 tempspatial_aware=False,\n                 temporal_attention=True,\n                 use_relative_position=True,\n                 use_causal_attention=False,\n                 temporal_length=None,\n                 use_fp16=False,\n                 addition_attention=False,\n                 temporal_selfatt_only=True,\n                 image_cross_attention=False,\n                 image_cross_attention_scale_learnable=False,\n                 default_fs=4,\n                 fs_condition=False,\n                ):\n        super(UNetModel, self).__init__()\n        if num_heads == -1:\n            assert num_head_channels != -1, 'Either num_heads or num_head_channels has to be set'\n        if num_head_channels == -1:\n            assert num_heads != -1, 'Either num_heads or num_head_channels has to be set'\n        self.in_channels = in_channels\n        self.model_channels = model_channels\n        self.out_channels = out_channels",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:328-351"
+    },
+    "413": {
+        "file_id": 16,
+        "content": "This code is initializing a UNet model with optional parameters. It checks if num_heads or num_head_channels are set, and sets the in_channels, model_channels, and out_channels for the model. The model is then initialized using super().__init__().",
+        "type": "comment"
+    },
+    "414": {
+        "file_id": 16,
+        "content": "        self.num_res_blocks = num_res_blocks\n        self.attention_resolutions = attention_resolutions\n        self.dropout = dropout\n        self.channel_mult = channel_mult\n        self.conv_resample = conv_resample\n        self.temporal_attention = temporal_attention\n        time_embed_dim = model_channels * 4\n        self.use_checkpoint = use_checkpoint\n        self.dtype = torch.float16 if use_fp16 else torch.float32\n        temporal_self_att_only = True\n        self.addition_attention = addition_attention\n        self.temporal_length = temporal_length\n        self.image_cross_attention = image_cross_attention\n        self.image_cross_attention_scale_learnable = image_cross_attention_scale_learnable\n        self.default_fs = default_fs\n        self.fs_condition = fs_condition\n        ## Time embedding blocks\n        self.time_embed = nn.Sequential(\n            linear(model_channels, time_embed_dim),\n            nn.SiLU(),\n            linear(time_embed_dim, time_embed_dim),\n        )\n        if fs_condition:",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:352-375"
+    },
+    "415": {
+        "file_id": 16,
+        "content": "This code is initializing class attributes for a network model. It sets the number of residual blocks, attention resolutions, dropout rate, channel multiplier, convolutional resampling flag, temporal attention usage, and more. The time embedding block is created using linear layers with SiLU activation function. If fs_condition is True, additional attributes related to frequency conditioning are initialized.",
+        "type": "comment"
+    },
+    "416": {
+        "file_id": 16,
+        "content": "            self.framestride_embed = nn.Sequential(\n                linear(model_channels, time_embed_dim),\n                nn.SiLU(),\n                linear(time_embed_dim, time_embed_dim),\n            )\n            nn.init.zeros_(self.framestride_embed[-1].weight)\n            nn.init.zeros_(self.framestride_embed[-1].bias)\n        ## Input Block\n        self.input_blocks = nn.ModuleList(\n            [\n                TimestepEmbedSequential(conv_nd(dims, in_channels, model_channels, 3, padding=1))\n            ]\n        )\n        if self.addition_attention:\n            self.init_attn=TimestepEmbedSequential(\n                TemporalTransformer(\n                    model_channels,\n                    n_heads=8,\n                    d_head=num_head_channels,\n                    depth=transformer_depth,\n                    context_dim=context_dim,\n                    use_checkpoint=use_checkpoint, only_self_att=temporal_selfatt_only, \n                    causal_attention=False, relative_position=use_relative_position, ",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:376-399"
+    },
+    "417": {
+        "file_id": 16,
+        "content": "This code initializes a neural network module for processing 3D OpenAI model data. It consists of a framestride_embed layer, followed by input blocks, and an optional addition attention mechanism. The framestride_embed layer performs linear transformations and SiLU activation functions, while the input blocks apply TimestepEmbedSequential convolutions. If the addition_attention flag is set, it also initializes a temporal transformer attention module.",
+        "type": "comment"
+    },
+    "418": {
+        "file_id": 16,
+        "content": "                    temporal_length=temporal_length))\n        input_block_chans = [model_channels]\n        ch = model_channels\n        ds = 1\n        for level, mult in enumerate(channel_mult):\n            for _ in range(num_res_blocks):\n                layers = [\n                    ResBlock(ch, time_embed_dim, dropout,\n                        out_channels=mult * model_channels, dims=dims, use_checkpoint=use_checkpoint,\n                        use_scale_shift_norm=use_scale_shift_norm, tempspatial_aware=tempspatial_aware,\n                        use_temporal_conv=temporal_conv\n                    )\n                ]\n                ch = mult * model_channels\n                if ds in attention_resolutions:\n                    if num_head_channels == -1:\n                        dim_head = ch // num_heads\n                    else:\n                        num_heads = ch // num_head_channels\n                        dim_head = num_head_channels\n                    layers.append(\n                        SpatialTransformer(ch, num_heads, dim_head, ",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:400-422"
+    },
+    "419": {
+        "file_id": 16,
+        "content": "This code defines a network for 3D object reconstruction using OpenAI's model. It creates convolutional blocks with residual connections and applies spatial transformers to improve resolution. The model channels, time embedding dimension, dropout rate, use of checkpointing, and other factors are configurable.",
+        "type": "comment"
+    },
+    "420": {
+        "file_id": 16,
+        "content": "                            depth=transformer_depth, context_dim=context_dim, use_linear=use_linear,\n                            use_checkpoint=use_checkpoint, disable_self_attn=False, \n                            video_length=temporal_length, image_cross_attention=self.image_cross_attention,\n                            image_cross_attention_scale_learnable=self.image_cross_attention_scale_learnable,                      \n                        )\n                    )\n                    if self.temporal_attention:\n                        layers.append(\n                            TemporalTransformer(ch, num_heads, dim_head,\n                                depth=transformer_depth, context_dim=context_dim, use_linear=use_linear,\n                                use_checkpoint=use_checkpoint, only_self_att=temporal_self_att_only, \n                                causal_attention=use_causal_attention, relative_position=use_relative_position, \n                                temporal_length=temporal_length",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:423-435"
+    },
+    "421": {
+        "file_id": 16,
+        "content": "This code creates an instance of a network model for 3D OpenAI's DAVIS dataset. It initializes several Transformer and Attention layers with specified parameters, such as channel count, number of heads, dimensionality of each head, transformer depth, context dimension, and more. The resulting network will be used to analyze temporal data and extract features from both image and video inputs.",
+        "type": "comment"
+    },
+    "422": {
+        "file_id": 16,
+        "content": "                            )\n                        )\n                self.input_blocks.append(TimestepEmbedSequential(*layers))\n                input_block_chans.append(ch)\n            if level != len(channel_mult) - 1:\n                out_ch = ch\n                self.input_blocks.append(\n                    TimestepEmbedSequential(\n                        ResBlock(ch, time_embed_dim, dropout, \n                            out_channels=out_ch, dims=dims, use_checkpoint=use_checkpoint,\n                            use_scale_shift_norm=use_scale_shift_norm,\n                            down=True\n                        )\n                        if resblock_updown\n                        else Downsample(ch, conv_resample, dims=dims, out_channels=out_ch)\n                    )\n                )\n                ch = out_ch\n                input_block_chans.append(ch)\n                ds *= 2\n        if num_head_channels == -1:\n            dim_head = ch // num_heads\n        else:\n            num_heads = ch // num_head_channels",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:436-460"
+    },
+    "423": {
+        "file_id": 16,
+        "content": "The code creates a network architecture with TimestepEmbedSequential and ResBlock layers, downsampling or upsampling based on resblock_updown, and determines the number of heads in the multi-head attention mechanism. It also keeps track of channel counts in input_block_chans.",
+        "type": "comment"
+    },
+    "424": {
+        "file_id": 16,
+        "content": "            dim_head = num_head_channels\n        layers = [\n            ResBlock(ch, time_embed_dim, dropout,\n                dims=dims, use_checkpoint=use_checkpoint,\n                use_scale_shift_norm=use_scale_shift_norm, tempspatial_aware=tempspatial_aware,\n                use_temporal_conv=temporal_conv\n            ),\n            SpatialTransformer(ch, num_heads, dim_head, \n                depth=transformer_depth, context_dim=context_dim, use_linear=use_linear,\n                use_checkpoint=use_checkpoint, disable_self_attn=False, video_length=temporal_length, \n                image_cross_attention=self.image_cross_attention,image_cross_attention_scale_learnable=self.image_cross_attention_scale_learnable                \n            )\n        ]\n        if self.temporal_attention:\n            layers.append(\n                TemporalTransformer(ch, num_heads, dim_head,\n                    depth=transformer_depth, context_dim=context_dim, use_linear=use_linear,\n                    use_checkpoint=use_checkpoint, only_self_att=temporal_self_att_only, ",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:461-478"
+    },
+    "425": {
+        "file_id": 16,
+        "content": "Defines layers for an openai model 3D network, including a ResBlock, SpatialTransformer, and optional TemporalTransformer if temporal attention is enabled. The layers are created with specified parameters like channels, heads, dimensions, depth, context dimension, dropout rate, etc.",
+        "type": "comment"
+    },
+    "426": {
+        "file_id": 16,
+        "content": "                    causal_attention=use_causal_attention, relative_position=use_relative_position, \n                    temporal_length=temporal_length\n                )\n            )\n        layers.append(\n            ResBlock(ch, time_embed_dim, dropout,\n                dims=dims, use_checkpoint=use_checkpoint,\n                use_scale_shift_norm=use_scale_shift_norm, tempspatial_aware=tempspatial_aware, \n                use_temporal_conv=temporal_conv\n                )\n        )\n        ## Middle Block\n        self.middle_block = TimestepEmbedSequential(*layers)\n        ## Output Block\n        self.output_blocks = nn.ModuleList([])\n        for level, mult in list(enumerate(channel_mult))[::-1]:\n            for i in range(num_res_blocks + 1):\n                ich = input_block_chans.pop()\n                layers = [\n                    ResBlock(ch + ich, time_embed_dim, dropout,\n                        out_channels=mult * model_channels, dims=dims, use_checkpoint=use_checkpoint,\n                        use_scale_shift_norm=use_scale_shift_norm, tempspatial_aware=tempspatial_aware,",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:479-502"
+    },
+    "427": {
+        "file_id": 16,
+        "content": "This code defines a network architecture consisting of several ResBlock layers. The architecture includes an input block, middle block, and output blocks. The ResBlock layers utilize channel attention and spatial attention mechanisms with optional temporal convolution and checkpointing for faster training. The model also incorporates timestep-aware embedding and scale shift normalization.",
+        "type": "comment"
+    },
+    "428": {
+        "file_id": 16,
+        "content": "                        use_temporal_conv=temporal_conv\n                    )\n                ]\n                ch = model_channels * mult\n                if ds in attention_resolutions:\n                    if num_head_channels == -1:\n                        dim_head = ch // num_heads\n                    else:\n                        num_heads = ch // num_head_channels\n                        dim_head = num_head_channels\n                    layers.append(\n                        SpatialTransformer(ch, num_heads, dim_head, \n                            depth=transformer_depth, context_dim=context_dim, use_linear=use_linear,\n                            use_checkpoint=use_checkpoint, disable_self_attn=False, video_length=temporal_length,\n                            image_cross_attention=self.image_cross_attention,image_cross_attention_scale_learnable=self.image_cross_attention_scale_learnable    \n                        )\n                    )\n                    if self.temporal_attention:\n                        layers.append(",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:503-521"
+    },
+    "429": {
+        "file_id": 16,
+        "content": "This code defines a network model with temporal and spatial attention. The model has multiple layers that can include a transformer layer for spatial attention and a temporal attention layer if `self.temporal_attention` is set to True. The number of heads in the transformer layer can be specified using `num_head_channels`, otherwise it is calculated based on the number of channels (ch) and model depth. The layers are added to a list for later use.",
+        "type": "comment"
+    },
+    "430": {
+        "file_id": 16,
+        "content": "                            TemporalTransformer(ch, num_heads, dim_head,\n                                depth=transformer_depth, context_dim=context_dim, use_linear=use_linear,\n                                use_checkpoint=use_checkpoint, only_self_att=temporal_self_att_only, \n                                causal_attention=use_causal_attention, relative_position=use_relative_position, \n                                temporal_length=temporal_length\n                            )\n                        )\n                if level and i == num_res_blocks:\n                    out_ch = ch\n                    layers.append(\n                        ResBlock(ch, time_embed_dim, dropout,\n                            out_channels=out_ch, dims=dims, use_checkpoint=use_checkpoint,\n                            use_scale_shift_norm=use_scale_shift_norm,\n                            up=True\n                        )\n                        if resblock_updown\n                        else Upsample(ch, conv_resample, dims=dims, out_channels=out_ch)",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:522-538"
+    },
+    "431": {
+        "file_id": 16,
+        "content": "This code creates a temporal transformer and adds it to the layers, with an optional upsampling operation at the end. The transformer has configurable depth, number of attention heads, dimensionality of each head, and other options for self-attention, causal attention, relative positioning, and more. If the \"level\" variable is set and this is the last block, it switches to the previous channel count as output (out_ch) and appends either a ResBlock or an upsampling operation based on the resblock_updown flag.",
+        "type": "comment"
+    },
+    "432": {
+        "file_id": 16,
+        "content": "                    )\n                    ds //= 2\n                self.output_blocks.append(TimestepEmbedSequential(*layers))\n        self.out = nn.Sequential(\n            normalization(ch),\n            nn.SiLU(),\n            zero_module(conv_nd(dims, model_channels, out_channels, 3, padding=1)),\n        )\n    def forward(self, x, timesteps, context=None, features_adapter=None, fs=None, **kwargs):\n        b,_,t,_,_ = x.shape\n        t_emb = timestep_embedding(timesteps, self.model_channels, repeat_only=False).type(x.dtype)\n        emb = self.time_embed(t_emb)\n        ## repeat t times for context [(b t) 77 768] & time embedding\n        ## check if we use per-frame image conditioning\n        _, l_context, _ = context.shape\n        if l_context == 77 + t*16: ## !!! HARD CODE here\n            context_text, context_img = context[:,:77,:], context[:,77:,:]\n            context_text = context_text.repeat_interleave(repeats=t, dim=0)\n            context_img = rearrange(context_img, 'b (t l) c -> (b t) l c', t=t)",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:539-560"
+    },
+    "433": {
+        "file_id": 16,
+        "content": "This code defines a module for the OpenAI's 3D Model network, which includes time-embedding layers and a forward function for processing input data. The module appends a TimestepEmbedSequential layer with specified dimensions and channels, and utilizes normalization and SiLU activation functions. It also applies convolutions and zero-padding to the input and includes a forward function for handling the input data, timesteps, context, and additional parameters.",
+        "type": "comment"
+    },
+    "434": {
+        "file_id": 16,
+        "content": "            context = torch.cat([context_text, context_img], dim=1)\n        else:\n            context = context.repeat_interleave(repeats=t, dim=0)\n        emb = emb.repeat_interleave(repeats=t, dim=0)\n        ## always in shape (b t) c h w, except for temporal layer\n        x = rearrange(x, 'b c t h w -> (b t) c h w')\n        ## combine emb\n        if self.fs_condition:\n            if fs is None:\n                fs = torch.tensor(\n                    [self.default_fs] * b, dtype=torch.long, device=x.device)\n            fs_emb = timestep_embedding(fs, self.model_channels, repeat_only=False).type(x.dtype)\n            fs_embed = self.framestride_embed(fs_emb)\n            fs_embed = fs_embed.repeat_interleave(repeats=t, dim=0)\n            emb = emb + fs_embed\n        h = x.type(self.dtype)\n        adapter_idx = 0\n        hs = []\n        for id, module in enumerate(self.input_blocks):\n            h = module(h, emb, context=context, batch_size=b)\n            if id ==0 and self.addition_attention:\n                h = self.init_attn(h, emb, context=context, batch_size=b)",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:561-585"
+    },
+    "435": {
+        "file_id": 16,
+        "content": "This code is a part of an openAI model implementation. It handles input data, repeats and combines embeddings based on temporal factors, applies frame stride conditioning if enabled, processes the input through several blocks (input_blocks), and possibly adds initial attention (if enabled). The output is stored in h.",
+        "type": "comment"
+    },
+    "436": {
+        "file_id": 16,
+        "content": "            ## plug-in adapter features\n            if ((id+1)%3 == 0) and features_adapter is not None:\n                h = h + features_adapter[adapter_idx]\n                adapter_idx += 1\n            hs.append(h)\n        if features_adapter is not None:\n            assert len(features_adapter)==adapter_idx, 'Wrong features_adapter'\n        h = self.middle_block(h, emb, context=context, batch_size=b)\n        for module in self.output_blocks:\n            h = torch.cat([h, hs.pop()], dim=1)\n            h = module(h, emb, context=context, batch_size=b)\n        h = h.type(x.dtype)\n        y = self.out(h)\n        # reshape back to (b c t h w)\n        y = rearrange(y, '(b t) c h w -> b c t h w', b=b)\n        return y",
+        "type": "code",
+        "location": "/lvdm/modules/networks/openaimodel3d.py:586-603"
+    },
+    "437": {
+        "file_id": 16,
+        "content": "This code is for processing features from a plug-in adapter and feeding them into a model. It checks if the current ID is divisible by 3 and the features_adapter is not None, then adds the adapter feature to h. If there are remaining adapter features after the loop, it asserts their length against adapter_idx. Afterwards, the code applies middle and output blocks, converts data type, and reshapes the final result back to original dimensions before returning it.",
+        "type": "comment"
+    },
+    "438": {
+        "file_id": 17,
+        "content": "/lvdm/modules/x_transformer.py",
+        "type": "filepath"
+    },
+    "439": {
+        "file_id": 17,
+        "content": "This code provides a comprehensive X-Transformer implementation with positional embeddings, neural network modules, and multi-head attention configurations. The TransformerWrapper class initializes embedding layers, dropout layers, and defines a transformer module for inference tasks.",
+        "type": "summary"
+    },
+    "440": {
+        "file_id": 17,
+        "content": "\"\"\"shout-out to https://github.com/lucidrains/x-transformers/tree/main/x_transformers\"\"\"\nfrom functools import partial\nfrom inspect import isfunction\nfrom collections import namedtuple\nfrom einops import rearrange, repeat\nimport torch\nfrom torch import nn, einsum\nimport torch.nn.functional as F\n# constants\nDEFAULT_DIM_HEAD = 64\nIntermediates = namedtuple('Intermediates', [\n    'pre_softmax_attn',\n    'post_softmax_attn'\n])\nLayerIntermediates = namedtuple('Intermediates', [\n    'hiddens',\n    'attn_intermediates'\n])\nclass AbsolutePositionalEmbedding(nn.Module):\n    def __init__(self, dim, max_seq_len):\n        super().__init__()\n        self.emb = nn.Embedding(max_seq_len, dim)\n        self.init_()\n    def init_(self):\n        nn.init.normal_(self.emb.weight, std=0.02)\n    def forward(self, x):\n        n = torch.arange(x.shape[1], device=x.device)\n        return self.emb(n)[None, :, :]\nclass FixedPositionalEmbedding(nn.Module):\n    def __init__(self, dim):\n        super().__init__()\n        inv_freq = 1. / (10000 ** (torch.arange(0, dim, 2).float() / dim))",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:1-41"
+    },
+    "441": {
+        "file_id": 17,
+        "content": "The code appears to be a part of the X-Transformers module, which implements transformer models for time series data. It includes classes such as AbsolutePositionalEmbedding and FixedPositionalEmbedding for adding positional embeddings to input sequences. It also includes namedtuples for storing intermediate results during forward passes of transformer layers. The code imports various functions and libraries from the torch and einops packages, indicating that it involves tensor manipulation and computations specific to transformer models.",
+        "type": "comment"
+    },
+    "442": {
+        "file_id": 17,
+        "content": "        self.register_buffer('inv_freq', inv_freq)\n    def forward(self, x, seq_dim=1, offset=0):\n        t = torch.arange(x.shape[seq_dim], device=x.device).type_as(self.inv_freq) + offset\n        sinusoid_inp = torch.einsum('i , j -> i j', t, self.inv_freq)\n        emb = torch.cat((sinusoid_inp.sin(), sinusoid_inp.cos()), dim=-1)\n        return emb[None, :, :]\n# helpers\ndef exists(val):\n    return val is not None\ndef default(val, d):\n    if exists(val):\n        return val\n    return d() if isfunction(d) else d\ndef always(val):\n    def inner(*args, **kwargs):\n        return val\n    return inner\ndef not_equals(val):\n    def inner(x):\n        return x != val\n    return inner\ndef equals(val):\n    def inner(x):\n        return x == val\n    return inner\ndef max_neg_value(tensor):\n    return -torch.finfo(tensor.dtype).max\n# keyword argument helpers\ndef pick_and_pop(keys, d):\n    values = list(map(lambda key: d.pop(key), keys))\n    return dict(zip(keys, values))\ndef group_dict_by_key(cond, d):\n    return_val = [dict(), dict()]",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:42-93"
+    },
+    "443": {
+        "file_id": 17,
+        "content": "The code defines a module for transforming input based on sinusoidal functions and registers a buffer 'inv_freq'. The exists, default, always, not_equals, equals, max_neg_value functions are utility functions used for various conditions. pick_and_pop is used to select keys from the dictionary and remove them. group_dict_by_key splits a dictionary based on a condition.",
+        "type": "comment"
+    },
+    "444": {
+        "file_id": 17,
+        "content": "    for key in d.keys():\n        match = bool(cond(key))\n        ind = int(not match)\n        return_val[ind][key] = d[key]\n    return (*return_val,)\ndef string_begins_with(prefix, str):\n    return str.startswith(prefix)\ndef group_by_key_prefix(prefix, d):\n    return group_dict_by_key(partial(string_begins_with, prefix), d)\ndef groupby_prefix_and_trim(prefix, d):\n    kwargs_with_prefix, kwargs = group_dict_by_key(partial(string_begins_with, prefix), d)\n    kwargs_without_prefix = dict(map(lambda x: (x[0][len(prefix):], x[1]), tuple(kwargs_with_prefix.items())))\n    return kwargs_without_prefix, kwargs\n# classes\nclass Scale(nn.Module):\n    def __init__(self, value, fn):\n        super().__init__()\n        self.value = value\n        self.fn = fn\n    def forward(self, x, **kwargs):\n        x, *rest = self.fn(x, **kwargs)\n        return (x * self.value, *rest)\nclass Rezero(nn.Module):\n    def __init__(self, fn):\n        super().__init__()\n        self.fn = fn\n        self.g = nn.Parameter(torch.zeros(1))\n    def forward(self, x, **kwargs):",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:94-133"
+    },
+    "445": {
+        "file_id": 17,
+        "content": "This code defines a Scale class that scales input using a provided function and a Rezero class that applies a zero-parameter function while also taking into account a \"g\" parameter. The group_by_key_prefix function groups dictionary keys with the same prefix, and the groupby_prefix_and_trim function further trims those keys after removing the prefix. The code snippet also includes partial definitions for cond, string_begins_with, and group_dict_by_key functions, which are likely used elsewhere in the codebase.",
+        "type": "comment"
+    },
+    "446": {
+        "file_id": 17,
+        "content": "        x, *rest = self.fn(x, **kwargs)\n        return (x * self.g, *rest)\nclass ScaleNorm(nn.Module):\n    def __init__(self, dim, eps=1e-5):\n        super().__init__()\n        self.scale = dim ** -0.5\n        self.eps = eps\n        self.g = nn.Parameter(torch.ones(1))\n    def forward(self, x):\n        norm = torch.norm(x, dim=-1, keepdim=True) * self.scale\n        return x / norm.clamp(min=self.eps) * self.g\nclass RMSNorm(nn.Module):\n    def __init__(self, dim, eps=1e-8):\n        super().__init__()\n        self.scale = dim ** -0.5\n        self.eps = eps\n        self.g = nn.Parameter(torch.ones(dim))\n    def forward(self, x):\n        norm = torch.norm(x, dim=-1, keepdim=True) * self.scale\n        return x / norm.clamp(min=self.eps) * self.g\nclass Residual(nn.Module):\n    def forward(self, x, residual):\n        return x + residual\nclass GRUGating(nn.Module):\n    def __init__(self, dim):\n        super().__init__()\n        self.gru = nn.GRUCell(dim, dim)\n    def forward(self, x, residual):\n        gated_output = self.gru(",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:134-173"
+    },
+    "447": {
+        "file_id": 17,
+        "content": "This code defines several neural network modules for normalization and residual connection. The ScaleNorm class scales input by the reciprocal of the dimension, then divides by the L2 norm with optional epsilon to prevent division by zero. The RMSNorm class applies a similar process but also includes a learnable parameter. The Residual class performs element-wise addition between its two inputs. The GRUGating class contains a GRUCell for temporal processing and provides a gated output.",
+        "type": "comment"
+    },
+    "448": {
+        "file_id": 17,
+        "content": "            rearrange(x, 'b n d -> (b n) d'),\n            rearrange(residual, 'b n d -> (b n) d')\n        )\n        return gated_output.reshape_as(x)\n# feedforward\nclass GEGLU(nn.Module):\n    def __init__(self, dim_in, dim_out):\n        super().__init__()\n        self.proj = nn.Linear(dim_in, dim_out * 2)\n    def forward(self, x):\n        x, gate = self.proj(x).chunk(2, dim=-1)\n        return x * F.gelu(gate)\nclass FeedForward(nn.Module):\n    def __init__(self, dim, dim_out=None, mult=4, glu=False, dropout=0.):\n        super().__init__()\n        inner_dim = int(dim * mult)\n        dim_out = default(dim_out, dim)\n        project_in = nn.Sequential(\n            nn.Linear(dim, inner_dim),\n            nn.GELU()\n        ) if not glu else GEGLU(dim, inner_dim)\n        self.net = nn.Sequential(\n            project_in,\n            nn.Dropout(dropout),\n            nn.Linear(inner_dim, dim_out)\n        )\n    def forward(self, x):\n        return self.net(x)\n# attention.\nclass Attention(nn.Module):\n    def __init__(\n            self,",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:174-216"
+    },
+    "449": {
+        "file_id": 17,
+        "content": "The code defines a GEGLU layer, FeedForward layer, and Attention module used in the Transformer architecture. The GEGLU layer performs gated generalized linear unit operation, while the FeedForward layer consists of a feed-forward neural network with optional GEGLU activation. The Attention module implements multi-head attention mechanism for the Transformer. These layers are used to process and learn meaningful representations from input data in various deep learning tasks.",
+        "type": "comment"
+    },
+    "450": {
+        "file_id": 17,
+        "content": "            dim,\n            dim_head=DEFAULT_DIM_HEAD,\n            heads=8,\n            causal=False,\n            mask=None,\n            talking_heads=False,\n            sparse_topk=None,\n            use_entmax15=False,\n            num_mem_kv=0,\n            dropout=0.,\n            on_attn=False\n    ):\n        super().__init__()\n        if use_entmax15:\n            raise NotImplementedError(\"Check out entmax activation instead of softmax activation!\")\n        self.scale = dim_head ** -0.5\n        self.heads = heads\n        self.causal = causal\n        self.mask = mask\n        inner_dim = dim_head * heads\n        self.to_q = nn.Linear(dim, inner_dim, bias=False)\n        self.to_k = nn.Linear(dim, inner_dim, bias=False)\n        self.to_v = nn.Linear(dim, inner_dim, bias=False)\n        self.dropout = nn.Dropout(dropout)\n        # talking heads\n        self.talking_heads = talking_heads\n        if talking_heads:\n            self.pre_softmax_proj = nn.Parameter(torch.randn(heads, heads))\n            self.post_softmax_proj = nn.Parameter(torch.randn(heads, heads))",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:217-248"
+    },
+    "451": {
+        "file_id": 17,
+        "content": "The code defines a class for a multi-head attention module. It initializes the class with various parameters and performs operations to calculate the attention scores. The use of entmax15 activation is currently not implemented, and if set to True, it raises a NotImplementedError. The scale, number of heads, causality, masking, dropout rate, and talking heads functionality are all configured within this code block.",
+        "type": "comment"
+    },
+    "452": {
+        "file_id": 17,
+        "content": "        # explicit topk sparse attention\n        self.sparse_topk = sparse_topk\n        # entmax\n        #self.attn_fn = entmax15 if use_entmax15 else F.softmax\n        self.attn_fn = F.softmax\n        # add memory key / values\n        self.num_mem_kv = num_mem_kv\n        if num_mem_kv > 0:\n            self.mem_k = nn.Parameter(torch.randn(heads, num_mem_kv, dim_head))\n            self.mem_v = nn.Parameter(torch.randn(heads, num_mem_kv, dim_head))\n        # attention on attention\n        self.attn_on_attn = on_attn\n        self.to_out = nn.Sequential(nn.Linear(inner_dim, dim * 2), nn.GLU()) if on_attn else nn.Linear(inner_dim, dim)\n    def forward(\n            self,\n            x,\n            context=None,\n            mask=None,\n            context_mask=None,\n            rel_pos=None,\n            sinusoidal_emb=None,\n            prev_attn=None,\n            mem=None\n    ):\n        b, n, _, h, talking_heads, device = *x.shape, self.heads, self.talking_heads, x.device\n        kv_input = default(context, x)\n        q_input = x",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:250-281"
+    },
+    "453": {
+        "file_id": 17,
+        "content": "This code defines a module for explicit top-k sparse attention with optional memory keys and values, and applies either softmax or entmax15 as the attention function. The forward pass takes in input tensor x and optional context, mask, rel_pos, sinusoidal_emb, prev_attn, and mem tensors. It uses default() to set default values for certain parameters. The code defines b, n, _, h, talking_heads, and device variables from the shape of x and module attributes. It then sets kv_input as either context or x, and q_input as x itself.",
+        "type": "comment"
+    },
+    "454": {
+        "file_id": 17,
+        "content": "        k_input = kv_input\n        v_input = kv_input\n        if exists(mem):\n            k_input = torch.cat((mem, k_input), dim=-2)\n            v_input = torch.cat((mem, v_input), dim=-2)\n        if exists(sinusoidal_emb):\n            # in shortformer, the query would start at a position offset depending on the past cached memory\n            offset = k_input.shape[-2] - q_input.shape[-2]\n            q_input = q_input + sinusoidal_emb(q_input, offset=offset)\n            k_input = k_input + sinusoidal_emb(k_input)\n        q = self.to_q(q_input)\n        k = self.to_k(k_input)\n        v = self.to_v(v_input)\n        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=h), (q, k, v))\n        input_mask = None\n        if any(map(exists, (mask, context_mask))):\n            q_mask = default(mask, lambda: torch.ones((b, n), device=device).bool())\n            k_mask = q_mask if not exists(context) else context_mask\n            k_mask = default(k_mask, lambda: torch.ones((b, k.shape[-2]), device=device).bool())",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:282-305"
+    },
+    "455": {
+        "file_id": 17,
+        "content": "This code initializes the input keys and values, concatenates previous memory if it exists, applies sinusoidal embeddings, performs linear transformations to obtain query, key, and value tensors. It then rearranges these tensors, optionally applies input masks based on provided mask or context_mask, and assigns default masks if necessary.",
+        "type": "comment"
+    },
+    "456": {
+        "file_id": 17,
+        "content": "            q_mask = rearrange(q_mask, 'b i -> b () i ()')\n            k_mask = rearrange(k_mask, 'b j -> b () () j')\n            input_mask = q_mask * k_mask\n        if self.num_mem_kv > 0:\n            mem_k, mem_v = map(lambda t: repeat(t, 'h n d -> b h n d', b=b), (self.mem_k, self.mem_v))\n            k = torch.cat((mem_k, k), dim=-2)\n            v = torch.cat((mem_v, v), dim=-2)\n            if exists(input_mask):\n                input_mask = F.pad(input_mask, (self.num_mem_kv, 0), value=True)\n        dots = einsum('b h i d, b h j d -> b h i j', q, k) * self.scale\n        mask_value = max_neg_value(dots)\n        if exists(prev_attn):\n            dots = dots + prev_attn\n        pre_softmax_attn = dots\n        if talking_heads:\n            dots = einsum('b h i j, h k -> b k i j', dots, self.pre_softmax_proj).contiguous()\n        if exists(rel_pos):\n            dots = rel_pos(dots)\n        if exists(input_mask):\n            dots.masked_fill_(~input_mask, mask_value)\n            del input_mask\n        if self.causal:",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:306-335"
+    },
+    "457": {
+        "file_id": 17,
+        "content": "This code performs multi-head attention using the Transformer architecture. It applies masking, concatenates key memory with current keys, scales and calculates dot products for all heads. It also optionally applies talking head or relative position bias, and fills masked values with negative maximum value if a mask is present.",
+        "type": "comment"
+    },
+    "458": {
+        "file_id": 17,
+        "content": "            i, j = dots.shape[-2:]\n            r = torch.arange(i, device=device)\n            mask = rearrange(r, 'i -> () () i ()') < rearrange(r, 'j -> () () () j')\n            mask = F.pad(mask, (j - i, 0), value=False)\n            dots.masked_fill_(mask, mask_value)\n            del mask\n        if exists(self.sparse_topk) and self.sparse_topk < dots.shape[-1]:\n            top, _ = dots.topk(self.sparse_topk, dim=-1)\n            vk = top[..., -1].unsqueeze(-1).expand_as(dots)\n            mask = dots < vk\n            dots.masked_fill_(mask, mask_value)\n            del mask\n        attn = self.attn_fn(dots, dim=-1)\n        post_softmax_attn = attn\n        attn = self.dropout(attn)\n        if talking_heads:\n            attn = einsum('b h i j, h k -> b k i j', attn, self.post_softmax_proj).contiguous()\n        out = einsum('b h i j, b h j d -> b h i d', attn, v)\n        out = rearrange(out, 'b h n d -> b n (h d)')\n        intermediates = Intermediates(\n            pre_softmax_attn=pre_softmax_attn,\n            post_softmax_attn=post_softmax_attn",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:336-363"
+    },
+    "459": {
+        "file_id": 17,
+        "content": "This code snippet performs attention masking, top-k pruning, and computes the attention output for a transformer module. It masks irrelevant values, selects top-k values, applies attention, softmax normalization, dropout, and rearranges the output to its original form.",
+        "type": "comment"
+    },
+    "460": {
+        "file_id": 17,
+        "content": "        )\n        return self.to_out(out), intermediates\nclass AttentionLayers(nn.Module):\n    def __init__(\n            self,\n            dim,\n            depth,\n            heads=8,\n            causal=False,\n            cross_attend=False,\n            only_cross=False,\n            use_scalenorm=False,\n            use_rmsnorm=False,\n            use_rezero=False,\n            rel_pos_num_buckets=32,\n            rel_pos_max_distance=128,\n            position_infused_attn=False,\n            custom_layers=None,\n            sandwich_coef=None,\n            par_ratio=None,\n            residual_attn=False,\n            cross_residual_attn=False,\n            macaron=False,\n            pre_norm=True,\n            gate_residual=False,\n            **kwargs\n    ):\n        super().__init__()\n        ff_kwargs, kwargs = groupby_prefix_and_trim('ff_', kwargs)\n        attn_kwargs, _ = groupby_prefix_and_trim('attn_', kwargs)\n        dim_head = attn_kwargs.get('dim_head', DEFAULT_DIM_HEAD)\n        self.dim = dim\n        self.depth = depth",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:364-401"
+    },
+    "461": {
+        "file_id": 17,
+        "content": "The code defines a class `AttentionLayers` inheriting from `nn.Module`, which serves as an attention layer for deep learning models. It takes in parameters like `dim`, `depth`, `heads`, etc., to configure the attention mechanism. It also initializes other sub-modules based on given keyword arguments.",
+        "type": "comment"
+    },
+    "462": {
+        "file_id": 17,
+        "content": "        self.layers = nn.ModuleList([])\n        self.has_pos_emb = position_infused_attn\n        self.pia_pos_emb = FixedPositionalEmbedding(dim) if position_infused_attn else None\n        self.rotary_pos_emb = always(None)\n        assert rel_pos_num_buckets <= rel_pos_max_distance, 'number of relative position buckets must be less than the relative position max distance'\n        self.rel_pos = None\n        self.pre_norm = pre_norm\n        self.residual_attn = residual_attn\n        self.cross_residual_attn = cross_residual_attn\n        norm_class = ScaleNorm if use_scalenorm else nn.LayerNorm\n        norm_class = RMSNorm if use_rmsnorm else norm_class\n        norm_fn = partial(norm_class, dim)\n        norm_fn = nn.Identity if use_rezero else norm_fn\n        branch_fn = Rezero if use_rezero else None\n        if cross_attend and not only_cross:\n            default_block = ('a', 'c', 'f')\n        elif cross_attend and only_cross:\n            default_block = ('c', 'f')\n        else:\n            default_block = ('a', 'f')",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:402-428"
+    },
+    "463": {
+        "file_id": 17,
+        "content": "The code initializes module components based on input parameters. It sets layer list, position embedding (optional), rotary pos emb, asserts relative position conditions, assigns relative pos, pre-norm flag, residual attn flags and cross-residual attn flag. It also defines a norm function, an identity function and default block depending on the input parameters.",
+        "type": "comment"
+    },
+    "464": {
+        "file_id": 17,
+        "content": "        if macaron:\n            default_block = ('f',) + default_block\n        if exists(custom_layers):\n            layer_types = custom_layers\n        elif exists(par_ratio):\n            par_depth = depth * len(default_block)\n            assert 1 < par_ratio <= par_depth, 'par ratio out of range'\n            default_block = tuple(filter(not_equals('f'), default_block))\n            par_attn = par_depth // par_ratio\n            depth_cut = par_depth * 2 // 3  # 2 / 3 attention layer cutoff suggested by PAR paper\n            par_width = (depth_cut + depth_cut // par_attn) // par_attn\n            assert len(default_block) <= par_width, 'default block is too large for par_ratio'\n            par_block = default_block + ('f',) * (par_width - len(default_block))\n            par_head = par_block * par_attn\n            layer_types = par_head + ('f',) * (par_depth - len(par_head))\n        elif exists(sandwich_coef):\n            assert sandwich_coef > 0 and sandwich_coef <= depth, 'sandwich coefficient should be less than the depth'",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:430-447"
+    },
+    "465": {
+        "file_id": 17,
+        "content": "This code block is responsible for setting the 'layer_types' variable based on different conditions. If 'macaron' exists, the default block is modified. If 'custom_layers' or 'par_ratio' exist, different blocks and layer types are determined accordingly. Additionally, if 'sandwich_coef' exists, it must be within specified limits.",
+        "type": "comment"
+    },
+    "466": {
+        "file_id": 17,
+        "content": "            layer_types = ('a',) * sandwich_coef + default_block * (depth - sandwich_coef) + ('f',) * sandwich_coef\n        else:\n            layer_types = default_block * depth\n        self.layer_types = layer_types\n        self.num_attn_layers = len(list(filter(equals('a'), layer_types)))\n        for layer_type in self.layer_types:\n            if layer_type == 'a':\n                layer = Attention(dim, heads=heads, causal=causal, **attn_kwargs)\n            elif layer_type == 'c':\n                layer = Attention(dim, heads=heads, **attn_kwargs)\n            elif layer_type == 'f':\n                layer = FeedForward(dim, **ff_kwargs)\n                layer = layer if not macaron else Scale(0.5, layer)\n            else:\n                raise Exception(f'invalid layer type {layer_type}')\n            if isinstance(layer, Attention) and exists(branch_fn):\n                layer = branch_fn(layer)\n            if gate_residual:\n                residual_fn = GRUGating(dim)\n            else:\n                residual_fn = Residual()",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:448-472"
+    },
+    "467": {
+        "file_id": 17,
+        "content": "The code dynamically creates a list of layer types based on the sandwich coefficient, depth, and default block. It then initializes layers for each type ('a' for attention, 'c' for causal attention, 'f' for feedforward) and checks if there are any branches to apply using the branch_fn. If gate residual is enabled, a GRU gating mechanism is used; otherwise, a simple residual connection is used.",
+        "type": "comment"
+    },
+    "468": {
+        "file_id": 17,
+        "content": "            self.layers.append(nn.ModuleList([\n                norm_fn(),\n                layer,\n                residual_fn\n            ]))\n    def forward(\n            self,\n            x,\n            context=None,\n            mask=None,\n            context_mask=None,\n            mems=None,\n            return_hiddens=False\n    ):\n        hiddens = []\n        intermediates = []\n        prev_attn = None\n        prev_cross_attn = None\n        mems = mems.copy() if exists(mems) else [None] * self.num_attn_layers\n        for ind, (layer_type, (norm, block, residual_fn)) in enumerate(zip(self.layer_types, self.layers)):\n            is_last = ind == (len(self.layers) - 1)\n            if layer_type == 'a':\n                hiddens.append(x)\n                layer_mem = mems.pop(0)\n            residual = x\n            if self.pre_norm:\n                x = norm(x)\n            if layer_type == 'a':\n                out, inter = block(x, mask=mask, sinusoidal_emb=self.pia_pos_emb, rel_pos=self.rel_pos,\n                                   prev_attn=prev_attn, mem=layer_mem)",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:474-510"
+    },
+    "469": {
+        "file_id": 17,
+        "content": "This code defines a transformer module with layers that include normalization, block operations, and residual functions. The forward function iterates through the layer types and performs necessary calculations for each layer type 'a'. It stores intermediary results in hiddens and intermediates lists, and handles context, mask, mems, and return_hiddens parameters.",
+        "type": "comment"
+    },
+    "470": {
+        "file_id": 17,
+        "content": "            elif layer_type == 'c':\n                out, inter = block(x, context=context, mask=mask, context_mask=context_mask, prev_attn=prev_cross_attn)\n            elif layer_type == 'f':\n                out = block(x)\n            x = residual_fn(out, residual)\n            if layer_type in ('a', 'c'):\n                intermediates.append(inter)\n            if layer_type == 'a' and self.residual_attn:\n                prev_attn = inter.pre_softmax_attn\n            elif layer_type == 'c' and self.cross_residual_attn:\n                prev_cross_attn = inter.pre_softmax_attn\n            if not self.pre_norm and not is_last:\n                x = norm(x)\n        if return_hiddens:\n            intermediates = LayerIntermediates(\n                hiddens=hiddens,\n                attn_intermediates=intermediates\n            )\n            return x, intermediates\n        return x\nclass Encoder(AttentionLayers):\n    def __init__(self, **kwargs):\n        assert 'causal' not in kwargs, 'cannot set causality on encoder'\n        super().__init__(causal=False, **kwargs)",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:511-543"
+    },
+    "471": {
+        "file_id": 17,
+        "content": "This code defines a function that applies a layer type-dependent operation to input 'x' and possibly stores intermediate results in 'intermediates'. The 'block' function is used, with optional parameters such as context, mask, context_mask, and prev_attn. If the layer type is 'a' or 'c', the intermediate result 'inter' is stored. If the layer type is 'a', the previous attention values are updated in 'prev_attn'. For 'c' layer types, the previous cross-attention values are updated in 'prev_cross_attn'. After processing all layers, if 'return_hiddens' is True, it returns both the final output 'x' and the intermediates stored in 'intermediates'. The 'Encoder' class extends the 'AttentionLayers' class with an additional constraint that causality cannot be set.",
+        "type": "comment"
+    },
+    "472": {
+        "file_id": 17,
+        "content": "class TransformerWrapper(nn.Module):\n    def __init__(\n            self,\n            *,\n            num_tokens,\n            max_seq_len,\n            attn_layers,\n            emb_dim=None,\n            max_mem_len=0.,\n            emb_dropout=0.,\n            num_memory_tokens=None,\n            tie_embedding=False,\n            use_pos_emb=True\n    ):\n        super().__init__()\n        assert isinstance(attn_layers, AttentionLayers), 'attention layers must be one of Encoder or Decoder'\n        dim = attn_layers.dim\n        emb_dim = default(emb_dim, dim)\n        self.max_seq_len = max_seq_len\n        self.max_mem_len = max_mem_len\n        self.num_tokens = num_tokens\n        self.token_emb = nn.Embedding(num_tokens, emb_dim)\n        self.pos_emb = AbsolutePositionalEmbedding(emb_dim, max_seq_len) if (\n                    use_pos_emb and not attn_layers.has_pos_emb) else always(0)\n        self.emb_dropout = nn.Dropout(emb_dropout)\n        self.project_emb = nn.Linear(emb_dim, dim) if emb_dim != dim else nn.Identity()",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:547-576"
+    },
+    "473": {
+        "file_id": 17,
+        "content": "This code defines a class called TransformerWrapper that inherits from nn.Module. It takes several arguments including the number of tokens, maximum sequence length, attention layers type, embedding dimension, maximum memory length, embedding dropout rate, and whether to tie embedding weights. The class initializes an embedding layer, a positional embedding (if needed), and an embedding dropout layer. Additionally, it applies a linear projection if the embedding dimension is different from the model's dimension.",
+        "type": "comment"
+    },
+    "474": {
+        "file_id": 17,
+        "content": "        self.attn_layers = attn_layers\n        self.norm = nn.LayerNorm(dim)\n        self.init_()\n        self.to_logits = nn.Linear(dim, num_tokens) if not tie_embedding else lambda t: t @ self.token_emb.weight.t()\n        # memory tokens (like [cls]) from Memory Transformers paper\n        num_memory_tokens = default(num_memory_tokens, 0)\n        self.num_memory_tokens = num_memory_tokens\n        if num_memory_tokens > 0:\n            self.memory_tokens = nn.Parameter(torch.randn(num_memory_tokens, dim))\n            # let funnel encoder know number of memory tokens, if specified\n            if hasattr(attn_layers, 'num_memory_tokens'):\n                attn_layers.num_memory_tokens = num_memory_tokens\n    def init_(self):\n        nn.init.normal_(self.token_emb.weight, std=0.02)\n    def forward(\n            self,\n            x,\n            return_embeddings=False,\n            mask=None,\n            return_mems=False,\n            return_attn=False,\n            mems=None,\n            **kwargs\n    ):\n        b, n, device, num_mem = *x.shape, x.device, self.num_memory_tokens",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:577-607"
+    },
+    "475": {
+        "file_id": 17,
+        "content": "This code defines a transformer module with attention layers, layer normalization, and optional memory tokens. It initializes the token embedding weights to small random values and provides a forward pass for inference. Memory tokens are additional inputs for the transformer, used for tasks like key/value coding in memory transformers.",
+        "type": "comment"
+    },
+    "476": {
+        "file_id": 17,
+        "content": "        x = self.token_emb(x)\n        x += self.pos_emb(x)\n        x = self.emb_dropout(x)\n        x = self.project_emb(x)\n        if num_mem > 0:\n            mem = repeat(self.memory_tokens, 'n d -> b n d', b=b)\n            x = torch.cat((mem, x), dim=1)\n            # auto-handle masking after appending memory tokens\n            if exists(mask):\n                mask = F.pad(mask, (num_mem, 0), value=True)\n        x, intermediates = self.attn_layers(x, mask=mask, mems=mems, return_hiddens=True, **kwargs)\n        x = self.norm(x)\n        mem, x = x[:, :num_mem], x[:, num_mem:]\n        out = self.to_logits(x) if not return_embeddings else x\n        if return_mems:\n            hiddens = intermediates.hiddens\n            new_mems = list(map(lambda pair: torch.cat(pair, dim=-2), zip(mems, hiddens))) if exists(mems) else hiddens\n            new_mems = list(map(lambda t: t[..., -self.max_mem_len:, :].detach(), new_mems))\n            return out, new_mems\n        if return_attn:\n            attn_maps = list(map(lambda t: t.post_softmax_attn, intermediates.attn_intermediates))",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:608-636"
+    },
+    "477": {
+        "file_id": 17,
+        "content": "The code snippet performs embedding operations on input \"x\" by applying token and position embeddings, dropping out some features using dropout layer, projecting the embedded features, and concatenating memory tokens if any. Then, it passes the result to attention layers for further processing, normalizes the output, separates the memory tokens from the rest, and converts the output into logits if required. Additionally, it returns the new memory states if specified, and the attention maps of the intermediate layers if asked.",
+        "type": "comment"
+    },
+    "478": {
+        "file_id": 17,
+        "content": "            return out, attn_maps\n        return out",
+        "type": "code",
+        "location": "/lvdm/modules/x_transformer.py:637-639"
+    },
+    "479": {
+        "file_id": 17,
+        "content": "This code returns the output and attention maps from a function in the x_transformer module.",
+        "type": "comment"
+    },
+    "480": {
+        "file_id": 18,
+        "content": "/prompts/test_prompts.txt",
+        "type": "filepath"
+    },
+    "481": {
+        "file_id": 18,
+        "content": "The code represents a series of prompts, each describing a different scene or activity involving various subjects like humans, animals, and nature. These could be used in creative writing exercises or as inspiration for artwork.",
+        "type": "summary"
+    },
+    "482": {
+        "file_id": 18,
+        "content": "man fishing in a boat at sunset\na brown bear is walking in a zoo enclosure, some rocks around\nboy walking on the street\ntwo people dancing\na campfire on the beach and the ocean waves in the background\ngirl with fires and smoke on his head\ngirl talking and blinking\nbear playing guitar happily, snowing",
+        "type": "code",
+        "location": "/prompts/test_prompts.txt:1-8"
+    },
+    "483": {
+        "file_id": 18,
+        "content": "The code represents a series of prompts, each describing a different scene or activity involving various subjects like humans, animals, and nature. These could be used in creative writing exercises or as inspiration for artwork.",
+        "type": "comment"
+    },
+    "484": {
+        "file_id": 19,
+        "content": "/requirements.txt",
+        "type": "filepath"
+    },
+    "485": {
+        "file_id": 19,
+        "content": "This code represents the dependencies and their versions needed for various Python libraries such as decord, einops, imageio, numpy, omegaconf, opencv_python, pandas, Pillow, pytorch_lightning, PyYAML, setuptools, torch, torchvision, tqdm, transformers, moviepy, av, xformers, gradio, timm, scikit-learn, open_clip_torch, and kornia.",
+        "type": "summary"
+    },
+    "486": {
+        "file_id": 19,
+        "content": "decord==0.6.0\neinops==0.3.0\nimageio==2.9.0\nnumpy==1.24.2\nomegaconf==2.1.1\nopencv_python\npandas==2.0.0\nPillow==9.5.0\npytorch_lightning==1.8.3\nPyYAML==6.0\nsetuptools==65.6.3\ntorch==2.0.0\ntorchvision\ntqdm==4.65.0\ntransformers==4.25.1\nmoviepy\nav\nxformers\ngradio\ntimm\nscikit-learn \nopen_clip_torch==2.22.0\nkornia",
+        "type": "code",
+        "location": "/requirements.txt:1-23"
+    },
+    "487": {
+        "file_id": 19,
+        "content": "This code represents the dependencies and their versions needed for various Python libraries such as decord, einops, imageio, numpy, omegaconf, opencv_python, pandas, Pillow, pytorch_lightning, PyYAML, setuptools, torch, torchvision, tqdm, transformers, moviepy, av, xformers, gradio, timm, scikit-learn, open_clip_torch, and kornia.",
+        "type": "comment"
+    },
+    "488": {
+        "file_id": 20,
+        "content": "/scripts/evaluation/ddp_wrapper.py",
+        "type": "filepath"
+    },
+    "489": {
+        "file_id": 20,
+        "content": "This code sets up an environment for DDP wrapper inference, enabling distributed data parallelism and handling distributed initialization.",
+        "type": "summary"
+    },
+    "490": {
+        "file_id": 20,
+        "content": "import datetime\nimport argparse, importlib\nfrom pytorch_lightning import seed_everything\nimport torch\nimport torch.distributed as dist\ndef setup_dist(local_rank):\n    if dist.is_initialized():\n        return\n    torch.cuda.set_device(local_rank)\n    torch.distributed.init_process_group('nccl', init_method='env://')\ndef get_dist_info():\n    if dist.is_available():\n        initialized = dist.is_initialized()\n    else:\n        initialized = False\n    if initialized:\n        rank = dist.get_rank()\n        world_size = dist.get_world_size()\n    else:\n        rank = 0\n        world_size = 1\n    return rank, world_size\nif __name__ == '__main__':\n    now = datetime.datetime.now().strftime(\"%Y-%m-%d-%H-%M-%S\")\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--module\", type=str, help=\"module name\", default=\"inference\")\n    parser.add_argument(\"--local_rank\", type=int, nargs=\"?\", help=\"for ddp\", default=0)\n    args, unknown = parser.parse_known_args()\n    inference_api = importlib.import_module(args.module, package=None)",
+        "type": "code",
+        "location": "/scripts/evaluation/ddp_wrapper.py:1-35"
+    },
+    "491": {
+        "file_id": 20,
+        "content": "Imports necessary libraries for distributed processing.\nDefines a function to set up distributed training process based on local rank.\nRetrieves current distributed information if available.\nTakes arguments for module name and local rank, defaults provided.\nImports specified module using importlib.",
+        "type": "comment"
+    },
+    "492": {
+        "file_id": 20,
+        "content": "    inference_parser = inference_api.get_parser()\n    inference_args, unknown = inference_parser.parse_known_args()\n    seed_everything(inference_args.seed)\n    setup_dist(args.local_rank)\n    torch.backends.cudnn.benchmark = True\n    rank, gpu_num = get_dist_info()\n    inference_args.savedir = inference_args.savedir+str('_seed')+str(inference_args.seed)\n    print(\"@CoLVDM Inference [rank%d]: %s\"%(rank, now))\n    inference_api.run_inference(inference_args, gpu_num, rank)",
+        "type": "code",
+        "location": "/scripts/evaluation/ddp_wrapper.py:37-47"
+    },
+    "493": {
+        "file_id": 20,
+        "content": "This code sets up an inference environment for the DDP (Distributed Data Parallel) wrapper. It parses the inference arguments, initializes a random seed, sets up distributed initialization, enables CUDNN benchmarking, gets distribution information, and runs inference with distributed data parallelism.",
+        "type": "comment"
+    },
+    "494": {
+        "file_id": 21,
+        "content": "/scripts/evaluation/funcs.py",
+        "type": "filepath"
+    },
+    "495": {
+        "file_id": 21,
+        "content": "The code imports libraries, defines a DDPM sampling function, and includes functions for loading model checkpoints, handling prompts, videos, and data batching. The output is the variable 'z'.",
+        "type": "summary"
+    },
+    "496": {
+        "file_id": 21,
+        "content": "import os, sys, glob\nimport numpy as np\nfrom collections import OrderedDict\nfrom decord import VideoReader, cpu\nimport cv2\nimport torch\nimport torchvision\nsys.path.insert(1, os.path.join(sys.path[0], '..', '..'))\nfrom lvdm.models.samplers.ddim import DDIMSampler\nfrom einops import rearrange\ndef batch_ddim_sampling(model, cond, noise_shape, n_samples=1, ddim_steps=50, ddim_eta=1.0,\\\n                        cfg_scale=1.0, temporal_cfg_scale=None, **kwargs):\n    ddim_sampler = DDIMSampler(model)\n    uncond_type = model.uncond_type\n    batch_size = noise_shape[0]\n    fs = cond[\"fs\"]\n    del cond[\"fs\"]\n    ## construct unconditional guidance\n    if cfg_scale != 1.0:\n        if uncond_type == \"empty_seq\":\n            prompts = batch_size * [\"\"]\n            #prompts = N * T * [\"\"]  ## if is_imgbatch=True\n            uc_emb = model.get_learned_conditioning(prompts)\n        elif uncond_type == \"zero_embed\":\n            c_emb = cond[\"c_crossattn\"][0] if isinstance(cond, dict) else cond\n            uc_emb = torch.zeros_like(c_emb)",
+        "type": "code",
+        "location": "/scripts/evaluation/funcs.py:1-29"
+    },
+    "497": {
+        "file_id": 21,
+        "content": "This code imports various libraries and defines a function called \"batch_ddim_sampling\". This function uses DDIMSampler from the lvdm library to perform sampling with denoising diffusion probability model (DDPM). The function takes in several parameters including the model, conditional information, noise shape, number of samples, and optional arguments. The code also constructs unconditional guidance based on the model's unconditional type.",
+        "type": "comment"
+    },
+    "498": {
+        "file_id": 21,
+        "content": "        ## process image embedding token\n        if hasattr(model, 'embedder'):\n            uc_img = torch.zeros(noise_shape[0],3,224,224).to(model.device)\n            ## img: b c h w >> b l c\n            uc_img = model.embedder(uc_img)\n            uc_img = model.image_proj_model(uc_img)\n            uc_emb = torch.cat([uc_emb, uc_img], dim=1)\n        if isinstance(cond, dict):\n            uc = {key:cond[key] for key in cond.keys()}\n            uc.update({'c_crossattn': [uc_emb]})\n        else:\n            uc = uc_emb\n    else:\n        uc = None\n    x_T = None\n    batch_variants = []\n    for _ in range(n_samples):\n        if ddim_sampler is not None:\n            kwargs.update({\"clean_cond\": True})\n            samples, _ = ddim_sampler.sample(S=ddim_steps,\n                                            conditioning=cond,\n                                            batch_size=noise_shape[0],\n                                            shape=noise_shape[1:],\n                                            verbose=False,",
+        "type": "code",
+        "location": "/scripts/evaluation/funcs.py:31-57"
+    },
+    "499": {
+        "file_id": 21,
+        "content": "Applies image embedding to the input and concatenates it with conditioning, if provided. If a dictionary is passed as condition, updates the conditioning with the embedded image. Otherwise, sets the conditioning as the embedded image. Samples from model given parameters.",
+        "type": "comment"
+    }
+}
