@@ -9,13 +9,13 @@ config=configs/inference_$1_v1.0.yaml
 prompt_dir=prompts/$1/
 res_dir="results"
 
-if [ "$1" == "256" ]; then
+if [ "$1" = "256" ]; then
     H=256
     FS=3  ## This model adopts frame stride=3
-elif [ "$1" == "512" ]; then
+elif [ "$1" = "512" ]; then
     H=320
     FS=24 ## This model adopts FPS=24
-elif [ "$1" == "1024" ]; then
+elif [ "$1" = "1024" ]; then
     H=576
     FS=10 ## This model adopts FPS=10
 else
@@ -62,7 +62,7 @@ fi
 #--loop
 
 ## inference using single node with multi-GPUs:
-if [ "$1" == "256" ]; then
+if [ "$1" = "256" ]; then
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m torch.distributed.launch \
 --nproc_per_node=8 --nnodes=1 --master_addr=127.0.0.1 --master_port=23456 --node_rank=0 \
 scripts/evaluation/ddp_wrapper.py \
