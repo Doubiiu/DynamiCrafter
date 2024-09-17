@@ -187,7 +187,7 @@ class ResBlock(TimestepBlock):
             self.skip_connection = conv_nd(dims, channels, self.out_channels, 1)
 
         if self.use_temporal_conv:
-            self.temopral_conv = TemporalConvBlock(
+            self.temporal_conv = TemporalConvBlock(
                 self.out_channels,
                 self.out_channels,
                 dropout=0.1,
@@ -231,7 +231,7 @@ class ResBlock(TimestepBlock):
 
         if self.use_temporal_conv and batch_size:
             h = rearrange(h, '(b t) c h w -> b c t h w', b=batch_size)
-            h = self.temopral_conv(h)
+            h = self.temporal_conv(h)
             h = rearrange(h, 'b c t h w -> (b t) c h w')
         return h
 
