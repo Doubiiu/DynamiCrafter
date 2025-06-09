@@ -5,7 +5,24 @@ import open_clip
 from torch.utils.checkpoint import checkpoint
 from transformers import T5Tokenizer, T5EncoderModel, CLIPTokenizer, CLIPTextModel
 from lvdm.common import autocast
-from utils.utils import count_params
+#from utils.utils import count_params
+import importlib
+def instantiate_from_config(config):
+    if not "target" in config:
+        if config == '__is_first_stage__':
+            return None
+        elif config == "__is_unconditional__":
+            return None
+        raise KeyError("Expected key `target` to instantiate.")
+    return get_obj_from_str(config["target"])(**config.get("params", dict()))
+
+
+def get_obj_from_str(string, reload=False):
+    module, cls = string.rsplit(".", 1)
+    if reload:
+        module_imp = importlib.import_module(module)
+        importlib.reload(module_imp)
+    return getattr(importlib.import_module(module, package=None), cls)
 
 
 class AbstractEncoder(nn.Module):
@@ -343,7 +360,7 @@ class FrozenOpenCLIPImageEmbedderV2(AbstractEncoder):
         x = self.preprocess(x)
 
         # to patches - whether to use dual patchnorm - https://arxiv.org/abs/2302.01327v1
-        if self.model.visual.input_patchnorm:
+        if False:#self.model.visual.input_patchnorm:
             # einops - rearrange(x, 'b c (h p1) (w p2) -> b (h w) (c p1 p2)')
             x = x.reshape(x.shape[0], x.shape[1], self.model.visual.grid_size[0], self.model.visual.patch_size[0], self.model.visual.grid_size[1], self.model.visual.patch_size[1])
             x = x.permute(0, 2, 4, 1, 3, 5)

@@ -14,7 +14,7 @@ model:
     image_size: [40, 64]
     channels: 4
     scale_by_std: False
-    scale_factor: 0.18215
+    scale_factor: 0.12
     use_ema: False
     uncond_type: 'empty_seq'
     use_dynamic_rescale: true

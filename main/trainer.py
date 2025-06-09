@@ -32,20 +32,20 @@ def get_parser(**parser_kwargs):
     
 def get_nondefault_trainer_args(args):
     parser = argparse.ArgumentParser()
-    parser = Trainer.add_argparse_args(parser)
+    #parser = Trainer.add_argparse_args(parser)
     default_trainer_args = parser.parse_args([])
     return sorted(k for k in vars(default_trainer_args) if getattr(args, k) != getattr(default_trainer_args, k))
 
 
 if __name__ == "__main__":
     now = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
-    local_rank = int(os.environ.get('LOCAL_RANK'))
-    global_rank = int(os.environ.get('RANK'))
-    num_rank = int(os.environ.get('WORLD_SIZE'))
+    local_rank = 0 #int(os.environ.get('LOCAL_RANK'))
+    global_rank = 0#int(os.environ.get('RANK'))
+    num_rank = 1 #int(os.environ.get('WORLD_SIZE'))
 
     parser = get_parser()
     ## Extends existing argparse by default Trainer attributes
-    parser = Trainer.add_argparse_args(parser)
+    #parser = Trainer.add_argparse_args(parser)
     args, unknown = parser.parse_known_args()
     ## disable transformer warning
     transf_logging.set_verbosity_error()
@@ -80,8 +80,8 @@ if __name__ == "__main__":
     for k in get_nondefault_trainer_args(args):
         trainer_config[k] = getattr(args, k)
         
-    num_nodes = trainer_config.num_nodes
-    ngpu_per_node = trainer_config.devices
+    num_nodes = 1 #trainer_config.num_nodes
+    ngpu_per_node = 1# trainer_config.devices
     logger.info(f"Running on {num_rank}={num_nodes}x{ngpu_per_node} GPUs")
 
     ## setup learning rate
@@ -103,8 +103,8 @@ if __name__ == "__main__":
 
     ## TRAINER CONFIG >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     logger.info("***** Configing Trainer *****")
-    if "accelerator" not in trainer_config:
-        trainer_config["accelerator"] = "gpu"
+    #if "accelerator" not in trainer_config:
+    trainer_config["accelerator"] = "gpu"
 
     ## setup trainer args: pl-logger and callbacks
     trainer_kwargs = dict()
@@ -121,9 +121,10 @@ if __name__ == "__main__":
     trainer_kwargs["sync_batchnorm"] = False
 
     ## trainer config: others
+    print( trainer_config)
+    trainer = Trainer(**trainer_config)
 
-    trainer_args = argparse.Namespace(**trainer_config)
-    trainer = Trainer.from_argparse_args(trainer_args, **trainer_kwargs)
+    #trainer = Trainer(trainer_args, **trainer_kwargs) # Trainer.from_argparse_args(trainer_args, **trainer_kwargs)
 
     ## allow checkpointing via USR1
     def melk(*args, **kwargs):
@@ -139,8 +140,8 @@ if __name__ == "__main__":
             pudb.set_trace()
 
     import signal
-    signal.signal(signal.SIGUSR1, melk)
-    signal.signal(signal.SIGUSR2, divein)
+    #signal.signal(signal.SIGUSR1, melk)
+    #signal.signal(signal.SIGUSR2, divein)
 
     ## Running LOOP >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     logger.info("***** Running the Loop *****")

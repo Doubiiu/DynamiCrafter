@@ -271,7 +271,7 @@ def run_inference(args, gpu_num, gpu_no):
     h, w = args.height // 8, args.width // 8
     channels = model.model.diffusion_model.out_channels
     n_frames = args.video_length
-    print(f'Inference with {n_frames} frames')
+    print(f'\nInference with {n_frames} frames')
     noise_shape = [args.bs, channels, n_frames, h, w]
 
     fakedir = os.path.join(args.savedir, "samples")
@@ -298,11 +298,12 @@ def run_inference(args, gpu_num, gpu_no):
             prompts = prompt_list_rank[indice:indice+args.bs]
             videos = data_list_rank[indice:indice+args.bs]
             filenames = filename_list_rank[indice:indice+args.bs]
+            print( prompts )
             if isinstance(videos, list):
                 videos = torch.stack(videos, dim=0).to("cuda")
             else:
                 videos = videos.unsqueeze(0).to("cuda")
-
+            # 
             batch_samples = image_guided_synthesis(model, prompts, videos, noise_shape, args.n_samples, args.ddim_steps, args.ddim_eta, \
                                 args.unconditional_guidance_scale, args.cfg_img, args.frame_stride, args.text_input, args.multiple_cond_cfg, args.loop, args.interp, args.timestep_spacing, args.guidance_rescale)
 

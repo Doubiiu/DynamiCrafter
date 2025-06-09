@@ -1,5 +1,5 @@
 model:
-  pretrained_checkpoint: checkpoints/dynamicrafter_512_interp_v1/model.ckpt
+  pretrained_checkpoint: C:\workspace\cs231n\proj\DynamiCrafter\checkpoints\dynamicrafter_512_interp_v1\model_train.ckpt
   base_learning_rate: 1.0e-05
   scale_lr: False
   target: lvdm.models.ddpm3d.LatentVisualDiffusion
@@ -113,14 +113,14 @@ model:
 data:
   target: utils_data.DataModuleFromConfig
   params:
-    batch_size: 2
-    num_workers: 12
+    batch_size: 1
+    num_workers: 1
     wrap: false
     train:
       target: lvdm.data.webvid.WebVid
       params:
-        data_dir: <WebVid10M DATA>
-        meta_path: <.csv FILE>
+        data_dir: C:\workspace\cs231n\proj\DynamiCrafter\data\kitti
+        meta_path: C:\workspace\cs231n\proj\DynamiCrafter\data\kitti.csv
         video_length: 16
         frame_stride: 6
         load_raw_resolution: true
@@ -130,13 +130,13 @@ data:
 
 lightning:
   precision: 16
-  # strategy: deepspeed_stage_2
+  strategy: ddp
   trainer:
     benchmark: True
     accumulate_grad_batches: 2
     max_steps: 100000
     # logger
-    log_every_n_steps: 50
+    log_every_n_steps: 3
     # val
     val_check_interval: 0.5
     gradient_clip_algorithm: 'norm'
@@ -145,7 +145,7 @@ lightning:
     model_checkpoint:
       target: pytorch_lightning.callbacks.ModelCheckpoint
       params:
-        every_n_train_steps: 9000 #1000
+        every_n_train_steps: 10 #1000
         filename: "{epoch}-{step}"
         save_weights_only: True
     metrics_over_trainsteps_checkpoint:
@@ -153,15 +153,15 @@ lightning:
       params:
         filename: '{epoch}-{step}'
         save_weights_only: True
-        every_n_train_steps: 10000 #20000 # 3s/step*2w=
+        every_n_train_steps: 10 #20000 # 3s/step*2w=
     batch_logger:
       target: callbacks.ImageLogger
       params:
         batch_frequency: 500
         to_local: False
-        max_images: 8
+        max_images: 6
         log_images_kwargs:
           ddim_steps: 50
-          unconditional_guidance_scale: 7.5
+          unconditional_guidance_scale: 10
           timestep_spacing: uniform_trailing
           guidance_rescale: 0.7
